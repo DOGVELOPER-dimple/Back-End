@@ -1,61 +1,62 @@
 package dogveloper.vojoge.jwt;
 
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
+import jakarta.annotation.PostConstruct;
 import java.security.Key;
 import java.util.Date;
 
 @Component
 public class JwtTokenProvider {
 
-    private final Key secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
-    private static final long VALIDITY_IN_MILLISECONDS = 3600000;
+    @Value("${jwt.secret}")
+    private String secretKey;
 
-    private final JwtStorageService jwtStorageService;
+    private Key key;
 
-    public JwtTokenProvider(JwtStorageService jwtStorageService) {
-        this.jwtStorageService = jwtStorageService;
+    private static final long EXPIRATION_TIME = 1000 * 60 * 60; // 1 hour
+
+    @PostConstruct
+    public void init() {
+        key = Keys.hmacShaKeyFor(secretKey.getBytes());
     }
 
-    public String createToken(String email) {
+    public String generateToken(String email) {
         Claims claims = Jwts.claims().setSubject(email);
-        Date now = new Date();
-        Date validity = new Date(now.getTime() + VALIDITY_IN_MILLISECONDS);
 
-        String token = Jwts.builder()
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + EXPIRATION_TIME);
+
+        return Jwts.builder()
                 .setClaims(claims)
                 .setIssuedAt(now)
-                .setExpiration(validity)
-                .signWith(secretKey, SignatureAlgorithm.HS256)
+                .setExpiration(expiryDate)
+                .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
-
-        boolean isSaved = jwtStorageService.saveToken(token, email, VALIDITY_IN_MILLISECONDS);
-        if (isSaved) {
-            System.out.println("Token successfully saved in Redis.");
-        } else {
-            System.err.println("Token was not saved in Redis.");
-        }
-
-        return token;
-    }
-
-    public String getEmailFromToken(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(secretKey)
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
     }
 
     public boolean validateToken(String token) {
         try {
-            Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token);
+            Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token);
             return true;
-        } catch (JwtException | IllegalArgumentException e) {
+        } catch (Exception e) {
             return false;
         }
+    }
+
+    public String getEmailFromToken(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getSubject();
     }
 }
