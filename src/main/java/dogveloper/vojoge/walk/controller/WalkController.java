@@ -8,6 +8,7 @@ import dogveloper.vojoge.walk.dto.response.ResponseWalkDetailDto;
 import dogveloper.vojoge.walk.dto.response.ResponseWalkDto;
 import dogveloper.vojoge.walk.dto.response.ResponseWalkHistoryDto;
 import dogveloper.vojoge.walk.service.WalkService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,7 +24,7 @@ public class WalkController {
     private final WalkService walkService;
     private final LocationService locationService;
 
-
+    @Operation(summary = "산책 저장", description = "산책 기록 저장")
     @PostMapping("/{dogId}/record")// 산책 기록 저장 기능
     public ResponseEntity<ResponseAddWalkDto> addWalkRepo(@PathVariable Long dogId, @RequestBody RequestWalkDto requestWalkDto){
         Walk walk = walkService.createWalk(dogId, requestWalkDto);
@@ -37,6 +38,7 @@ public class WalkController {
         }
     }
 
+    @Operation(summary = "산책 리스트", description = "강아지별 산책 기록 리스트 확인")
     @GetMapping("/{dogId}/history")// 산책 기록 리스트 확인
     public ResponseEntity<ResponseWalkDto<List<ResponseWalkHistoryDto>>> getWalkHistory(@PathVariable Long dogId){
         List<ResponseWalkHistoryDto> responseWalkDtoList = walkService.findAllByDogId(dogId);
@@ -49,6 +51,7 @@ public class WalkController {
         }
     }
 
+    @Operation(summary = "산책 경로 보기", description = "산책 기록 보기")
     @GetMapping("/{walkId}") // 산책 기록 경로 보기
     public ResponseEntity<ResponseWalkDto<ResponseWalkDetailDto>> getWalkDetail(@PathVariable Long walkId){
         ResponseWalkDetailDto responseWalkDetailDto = walkService.findDetailWalk(walkId);
@@ -61,6 +64,7 @@ public class WalkController {
         }
     }
 
+    @Operation(summary = "산책 기록 삭제", description = "산책 기록 삭제")
     @DeleteMapping("/{walkId}")
     public ResponseEntity<Map<String, String>> deleteWalk(@PathVariable Long walkId){
         boolean b = walkService.deleteWalk(walkId);
