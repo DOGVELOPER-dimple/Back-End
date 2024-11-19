@@ -1,35 +1,29 @@
-package dogveloper.vojoge.user;
+package dogveloper.vojoge.dog.domain;
 
+import dogveloper.vojoge.user.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
+import lombok.NonNull;
 
 @Data
 @Entity
-@Table(name = "user")
+@Table(name = "dog")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class User {
-
+public class Dog {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
     private Long id;
 
-    @Column
-    private String sub;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
 
-    @Column
     private String name;
 
-    @Column
-    private String email;
+    private String puppy_species;
 
-    @Enumerated(EnumType.STRING)
-    @Column
-    private Provider provider;
-
-    @Column
     private String image;
 }
