@@ -11,6 +11,7 @@ import dogveloper.vojoge.walk.service.WalkService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -21,6 +22,7 @@ public class LocationService {
     private final LocationRepository locationRepository;
     private final WalkService walkService;
 
+    @Transactional
     public boolean addLocation(Walk walk, List<RequestWalkLocationDto> requestWalkLocationDtos){
         if(walk == null)
             return false;
@@ -31,6 +33,7 @@ public class LocationService {
         return true;
     }
 
+    @Transactional
     public List<ResponseLocationDto> findAllByWalk(Long walk_id){
         Walk walk = walkService.findById(walk_id);
         return locationRepository.findAllByWalk(walk).stream()

@@ -12,6 +12,7 @@ import dogveloper.vojoge.walk.repository.WalkRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -22,6 +23,8 @@ import java.util.Optional;
 public class WalkService {
     private final WalkRepository walkRepository;
     private final DogService dogService;
+
+    @Transactional
     public Walk createWalk(Long dogId, RequestWalkDto requestWalkDto){
         Dog dog = dogService.findById(dogId);
         if(dog != null) {
@@ -31,10 +34,12 @@ public class WalkService {
         return null;
     }
 
+    @Transactional
     public Walk findById(Long id){
         return walkRepository.findById(id).orElse(null);
     }
 
+    @Transactional
     public List<ResponseWalkHistoryDto> findAllByDogId(Long dogId){
         Dog dog = dogService.findById(dogId);
         if(dog != null){
@@ -46,6 +51,7 @@ public class WalkService {
         return null;
     }
 
+    @Transactional
     public ResponseWalkDetailDto findDetailWalk(Long walkId){
         Walk walk = findById(walkId);
         if(walk != null){
@@ -56,6 +62,7 @@ public class WalkService {
         }
     }
 
+    @Transactional
     public boolean deleteWalk(Long walkId){
         Walk walk = findById(walkId);
         if(walk != null){

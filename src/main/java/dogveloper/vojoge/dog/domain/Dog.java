@@ -1,10 +1,12 @@
 package dogveloper.vojoge.dog.domain;
 
-import dogveloper.vojoge.social.user.User;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import dogveloper.vojoge.user.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 
 @Data
 @Entity
@@ -13,11 +15,11 @@ import lombok.NoArgsConstructor;
 public class Dog {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
+    @JsonIgnore
     private User user;
 
     private String name;

@@ -23,7 +23,6 @@ public class Walk {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
