@@ -35,20 +35,13 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         // JWT 토큰 생성 및 Redis에 저장
         String token = jwtTokenProvider.createToken(email);
 
-        // 응답으로 JWT 토큰 전달
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
-        response.getWriter().write("{\"token\": \"" + token + "\"}");
+        // 리다이렉트 URL 설정
+        String redirectUrl = "http://10.0.2.2:8080/auth/success?token=" + token; // 플러터에서 처리할 URL
+        response.sendRedirect(redirectUrl);
     }
 
-    /**
-     * OAuth2User에서 이메일 추출
-     */
     private String extractEmail(OAuth2User oAuth2User) {
-        // 기본 이메일 필드 (구글 등)
         String email = oAuth2User.getAttribute("email");
-
-        // 카카오의 경우 별도 처리
         if (email == null) {
             Object kakaoAccount = oAuth2User.getAttribute("kakao_account");
             if (kakaoAccount instanceof Map) {
@@ -56,7 +49,6 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
                 email = (String) accountMap.get("email");
             }
         }
-
         return email;
     }
 }

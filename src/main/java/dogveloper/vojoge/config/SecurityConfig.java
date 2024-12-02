@@ -35,9 +35,10 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configurationSource(request -> {
                     var config = new CorsConfiguration();
-                    config.setAllowedOrigins(List.of("http://localhost:3000", "http://10.0.2.2:8080"));
+                    config.setAllowedOrigins(List.of("http://localhost:3000", "http://10.0.2.2:8080")); // 플러터 URL 추가
                     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
                     config.setAllowedHeaders(List.of("*"));
+                    config.setAllowCredentials(true); // 리다이렉트를 위해 필수
                     return config;
                 }))
                 .csrf(AbstractHttpConfigurer::disable)
