@@ -36,7 +36,7 @@ public class AuthController {
     @GetMapping("/login/kakao")
     @Operation(summary = "카카오 로그인 //준상")
     public void kakaoLoginRedirect(HttpServletResponse response) {
-        response.sendRedirect("http://localhost:8080/oauth2/authorization/kakao");
+        response.sendRedirect("http://10.0.2.2:8080/oauth2/authorization/kakao");
     }
 
 /*
