@@ -10,24 +10,39 @@ import java.util.Date;
 @Component
 public class JwtTokenProvider {
 
-    private final Key secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256); // Secret Key 생성
-    private final long validityInMilliseconds = 3600000; // 1시간 (밀리초)
+    private final Key secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    private static final long VALIDITY_IN_MILLISECONDS = 3600000;
 
-    // 토큰 생성
+    private final JwtStorageService jwtStorageService;
+
+    // JwtStorageService 의존성 주입
+    public JwtTokenProvider(JwtStorageService jwtStorageService) {
+        this.jwtStorageService = jwtStorageService;
+    }
+
     public String createToken(String email) {
-        Claims claims = Jwts.claims().setSubject(email); // 사용자 식별값 저장 (email)
+        Claims claims = Jwts.claims().setSubject(email);
         Date now = new Date();
-        Date validity = new Date(now.getTime() + validityInMilliseconds);
+        Date validity = new Date(now.getTime() + VALIDITY_IN_MILLISECONDS);
 
-        return Jwts.builder()
+        String token = Jwts.builder()
                 .setClaims(claims)
                 .setIssuedAt(now)
                 .setExpiration(validity)
                 .signWith(secretKey, SignatureAlgorithm.HS256)
                 .compact();
+
+        // Redis에 저장
+        boolean isSaved = jwtStorageService.saveToken(token, email, VALIDITY_IN_MILLISECONDS);
+        if (isSaved) {
+            System.out.println("Token successfully saved in Redis.");
+        } else {
+            System.err.println("Token was not saved in Redis.");
+        }
+
+        return token;
     }
 
-    // 토큰에서 이메일 추출
     public String getEmailFromToken(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(secretKey)
@@ -37,7 +52,6 @@ public class JwtTokenProvider {
                 .getSubject();
     }
 
-    // 토큰 유효성 검증
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token);
