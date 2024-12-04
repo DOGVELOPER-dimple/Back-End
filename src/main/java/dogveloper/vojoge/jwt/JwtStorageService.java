@@ -21,16 +21,13 @@ public class JwtStorageService {
                 throw new IllegalStateException("RedisTemplate is not initialized.");
             }
 
-            // 저장 전 로그 출력
             System.out.println("Saving token: " + token + " for email: " + email);
             System.out.println("TTL: " + validityInMilliseconds + "ms");
 
-            // Redis에 저장
             redisTemplate.opsForValue().set(token, email, validityInMilliseconds, TimeUnit.MILLISECONDS);
 
             System.out.println("Redis에 저장된 값 확인: " + redisTemplate.opsForValue().get(token));
 
-            // 저장 확인
             String storedValue = redisTemplate.opsForValue().get(token);
             if (storedValue != null) {
                 System.out.println("Token saved successfully for email: " + storedValue);
@@ -45,7 +42,6 @@ public class JwtStorageService {
         }
     }
 
-    // 토큰으로 이메일 조회
     public String getEmailByToken(String token) {
         try {
             if (redisTemplate == null) {
@@ -62,7 +58,6 @@ public class JwtStorageService {
         }
     }
 
-    // 토큰 삭제
     public boolean deleteToken(String token) {
         try {
             if (redisTemplate == null) {

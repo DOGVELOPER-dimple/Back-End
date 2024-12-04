@@ -1,12 +1,12 @@
 package dogveloper.vojoge.dog.domain;
 
+import dogveloper.vojoge.social.user.User;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import dogveloper.vojoge.user.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
 
 @Data
 @Entity

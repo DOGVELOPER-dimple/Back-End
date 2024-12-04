@@ -15,7 +15,6 @@ public class JwtTokenProvider {
 
     private final JwtStorageService jwtStorageService;
 
-    // JwtStorageService 의존성 주입
     public JwtTokenProvider(JwtStorageService jwtStorageService) {
         this.jwtStorageService = jwtStorageService;
     }
@@ -32,7 +31,6 @@ public class JwtTokenProvider {
                 .signWith(secretKey, SignatureAlgorithm.HS256)
                 .compact();
 
-        // Redis에 저장
         boolean isSaved = jwtStorageService.saveToken(token, email, VALIDITY_IN_MILLISECONDS);
         if (isSaved) {
             System.out.println("Token successfully saved in Redis.");
