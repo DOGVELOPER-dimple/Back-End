@@ -1,4 +1,4 @@
-package dogveloper.vojoge.entity;
+package dogveloper.vojoge.social.user;
 
 import jakarta.persistence.*;
 import lombok.*;
