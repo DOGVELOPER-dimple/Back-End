@@ -24,7 +24,7 @@ public class User {
     private String sub; // OAuth2 Provider의 고유 사용자 ID
 
     @Column(nullable = false)
-    private String name; // 사용자 이름 또는 닉네임
+    private String name;
 
     @Column(nullable = false, unique = true)
     private String email = "no-email@provider.com"; // 기본 이메일 값 설정

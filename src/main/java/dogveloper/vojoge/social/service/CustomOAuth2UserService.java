@@ -24,9 +24,9 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) {
         OAuth2User oAuth2User = super.loadUser(userRequest);
-        String registrationId = userRequest.getClientRegistration().getRegistrationId(); // google, kakao 구분
+        String registrationId = userRequest.getClientRegistration().getRegistrationId();
 
-        // 사용자 정보 처리
+
         if ("kakao".equals(registrationId)) {
             return processKakaoUser(oAuth2User.getAttributes());
         } else if ("google".equals(registrationId)) {
@@ -43,7 +43,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             throw new IllegalStateException("카카오 계정 정보를 가져오지 못했습니다.");
         }
 
-        String sub = String.valueOf(attributes.get("id")); // 카카오 고유 ID
+        String sub = String.valueOf(attributes.get("id"));
         String email = (String) kakaoAccount.get("email");
         String nickname = (String) ((Map<String, Object>) kakaoAccount.get("profile")).get("nickname");
         String profileImage = (String) ((Map<String, Object>) kakaoAccount.get("profile")).get("profile_image_url");
@@ -52,7 +52,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             throw new IllegalStateException("이메일 정보가 없습니다. 동의 항목을 확인해주세요.");
         }
 
-        // 사용자 엔티티 저장 또는 업데이트
+
         User user = userRepository.findByEmail(email).orElseGet(() -> User.builder()
                 .sub(sub)
                 .email(email)
@@ -66,7 +66,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         return new DefaultOAuth2User(
                 Collections.singletonList(() -> "ROLE_USER"),
                 attributes,
-                "id" // Principal의 기본 키 속성
+                "id"
         );
     }
 
@@ -89,7 +89,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         return new DefaultOAuth2User(
                 Collections.singletonList(() -> "ROLE_USER"),
                 attributes,
-                "sub" // Principal의 기본 키 속성
+                "sub"
         );
     }
 }

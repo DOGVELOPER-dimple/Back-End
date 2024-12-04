@@ -42,7 +42,7 @@ public class SecurityConfig {
                             "https://1df2-203-237-200-56.ngrok-free.app"));
                     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
                     config.setAllowedHeaders(List.of("*"));
-                    config.setAllowCredentials(true); // 리다이렉트를 위해 필수
+                    config.setAllowCredentials(true);
                     return config;
                 }))
                 .csrf(AbstractHttpConfigurer::disable)
