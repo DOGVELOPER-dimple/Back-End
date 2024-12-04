@@ -36,7 +36,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         String token = jwtTokenProvider.createToken(email);
 
         // 리다이렉트 URL 설정
-        String redirectUrl = "http://10.0.2.2:8080/auth/success?token=" + token; // 플러터에서 처리할 URL
+        String redirectUrl = "https://1df2-203-237-200-56.ngrok-free.app/auth/success?token=" + token; // 플러터에서 처리할 URL
         response.sendRedirect(redirectUrl);
     }
 
