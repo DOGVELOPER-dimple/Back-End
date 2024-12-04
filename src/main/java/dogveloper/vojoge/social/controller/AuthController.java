@@ -1,9 +1,9 @@
-package dogveloper.vojoge.controller;
+package dogveloper.vojoge.social.controller;
 
-import dogveloper.vojoge.entity.User;
+import dogveloper.vojoge.social.user.User;
 import dogveloper.vojoge.jwt.JwtStorageService;
 import dogveloper.vojoge.jwt.JwtTokenProvider;
-import dogveloper.vojoge.repository.UserRepository;
+import dogveloper.vojoge.social.user.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.SneakyThrows;

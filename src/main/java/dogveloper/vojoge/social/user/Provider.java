@@ -1,4 +1,4 @@
-package dogveloper.vojoge.entity;
+package dogveloper.vojoge.social.user;
 
 public enum Provider {
     GOOGLE, KAKAO

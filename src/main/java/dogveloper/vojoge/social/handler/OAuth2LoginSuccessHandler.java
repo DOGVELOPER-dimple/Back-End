@@ -1,4 +1,4 @@
-package dogveloper.vojoge.handler;
+package dogveloper.vojoge.social.handler;
 
 import dogveloper.vojoge.jwt.JwtTokenProvider;
 import jakarta.servlet.http.HttpServletRequest;

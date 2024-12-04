@@ -1,8 +1,8 @@
-package dogveloper.vojoge.service;
+package dogveloper.vojoge.social.service;
 
-import dogveloper.vojoge.entity.User;
-import dogveloper.vojoge.entity.Provider;
-import dogveloper.vojoge.repository.UserRepository;
+import dogveloper.vojoge.social.user.User;
+import dogveloper.vojoge.social.user.Provider;
+import dogveloper.vojoge.social.user.UserRepository;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;

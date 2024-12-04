@@ -1,6 +1,5 @@
-package dogveloper.vojoge.repository;
+package dogveloper.vojoge.social.user;
 
-import dogveloper.vojoge.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
