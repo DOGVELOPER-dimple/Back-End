@@ -30,13 +30,13 @@ public class AuthController {
     @GetMapping("/login/google")
     @Operation(summary = "구글 로그인 //준상")
     public void googleLoginRedirect(HttpServletResponse response){
-        response.sendRedirect("http://localhost:8080/oauth2/authorization/google");
+        response.sendRedirect("/oauth2/authorization/google");
     }
     @SneakyThrows
     @GetMapping("/login/kakao")
     @Operation(summary = "카카오 로그인 //준상")
     public void kakaoLoginRedirect(HttpServletResponse response) {
-        response.sendRedirect("http://10.0.2.2:8080/oauth2/authorization/kakao");
+        response.sendRedirect("/oauth2/authorization/kakao");
     }
 
 /*
@@ -73,6 +73,17 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message", "로그아웃 완료!"));
     }
 
+    @GetMapping("/success")
+    @Operation(summary = "JWT 반환 엔드포인트")
+    public ResponseEntity<Map<String, String>> getJwtToken(
+            @RequestParam String email
+    ) {
+        // JWT 생성
+        String token = jwtTokenProvider.createToken(email);
+
+        // JSON 형식으로 반환
+        return ResponseEntity.ok(Map.of("token", token));
+    }
     @GetMapping("/userinfo")
     @Operation(summary = "사용자 정보 조회 //준상")
     public ResponseEntity<Map<String, String>> getUserInfo(@RequestHeader("Authorization") String authorization) {
