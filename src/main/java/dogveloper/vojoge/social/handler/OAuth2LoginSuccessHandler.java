@@ -25,18 +25,18 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             throws IOException {
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
 
-        // 이메일 추출 로직 (구글 및 카카오 지원)
+
         String email = extractEmail(oAuth2User);
         if (email == null) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "이메일을 가져올 수 없습니다.");
             return;
         }
 
-        // JWT 토큰 생성 및 Redis에 저장
+
         String token = jwtTokenProvider.createToken(email);
 
-        // 리다이렉트 URL 설정
-        String redirectUrl = "https://1df2-203-237-200-56.ngrok-free.app/auth/success?token=" + token; // 플러터에서 처리할 URL
+
+        String redirectUrl = "http://localhost:8080/auth/success?token=" + token;
         response.sendRedirect(redirectUrl);
     }
 

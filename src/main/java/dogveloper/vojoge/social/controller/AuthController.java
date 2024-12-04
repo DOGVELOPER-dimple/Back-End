@@ -91,19 +91,19 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("error", "Invalid or missing Authorization header"));
         }
 
-        String token = authorization.substring(7); // "Bearer " 제거
-        String email = jwtTokenProvider.getEmailFromToken(token); // JWT에서 이메일 추출
+        String token = authorization.substring(7);
+        String email = jwtTokenProvider.getEmailFromToken(token);
 
-        // 이메일로 사용자 정보 조회
+
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found for email: " + email));
 
-        // 사용자 정보를 JSON으로 반환
+
         Map<String, String> userInfo = Map.of(
                 "email", user.getEmail(),
                 "name", user.getName(),
                 "profileImage", user.getImage(),
-                "provider", user.getProvider().name() // Provider 정보 추가 (Google/Kakao)
+                "provider", user.getProvider().name()
         );
 
         return ResponseEntity.ok(userInfo);
