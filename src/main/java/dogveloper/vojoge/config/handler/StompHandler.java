@@ -36,7 +36,7 @@ public class StompHandler implements ChannelInterceptor {
 
         if (StompCommand.CONNECT.equals(accessor.getCommand())) {
             log.info("Processing CONNECT command...");
-            // CONNECT 시 헤더 검증 없음
+
             return message;
         }
 
@@ -75,13 +75,10 @@ public class StompHandler implements ChannelInterceptor {
     private void connectToChatRoom(Long chatRoomNo, Long dogId) {
         log.info("Connecting to chatRoomNo: {} with dogId: {}", chatRoomNo, dogId);
 
-        // 현재 채팅방에 접속중인 인원이 있는지 확인
         boolean isConnected = chatRoomService.isConnected(chatRoomNo);
 
-        // 채팅방 입장 처리 -> Redis에 입장 내역 저장
         chatRoomService.connectChatRoom(chatRoomNo, dogId);
 
-        // 읽지 않은 채팅을 전부 읽음 처리
         chatRoomService.updateUnreadMessagesToRead(chatRoomNo, dogId);
 
         log.info("Is someone already connected to chatRoomNo {}: {}", chatRoomNo, isConnected);
