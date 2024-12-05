@@ -30,7 +30,6 @@ public class ChatController {
     private final DogService dogService;
     private final ChatService chatService;
 
-    //채팅방 생성
     @Operation(summary = "채팅방 생성", description = "채팅방 생성")
     @PostMapping("/chatroom")
     public ResponseEntity<Response<Chat>> createChatRoom(@RequestBody ChatRequestDto requestDto){
@@ -40,7 +39,6 @@ public class ChatController {
         return ResponseEntity.ok(Response.success(chat));
     }
 
-    //내가 참여중인 채팅방 조회
     @Operation(summary = "나의 채팀룸", description = "채팅룸")
     @GetMapping("/my-chatroom")
     public ResponseEntity<Response<List<MyChatRoomResponse>>> chatRoomList(){
@@ -50,7 +48,6 @@ public class ChatController {
         return ResponseEntity.ok(Response.success(chatRoomList));
     }
 
-    //채팅내역 조회
     @Operation(summary = "채팅 내역 조회", description = "채팅 내역 조회")
     @GetMapping("/chatroom/{roomNo}")
     public ResponseEntity<Response<ChattingHistoryResponseDto>> chattingList(@PathVariable Long roomNo){
@@ -59,7 +56,6 @@ public class ChatController {
         return ResponseEntity.ok(Response.success(chattingList));
     }
 
-    // 알림 전송 및 메세지 저장
     @Operation(summary = "채팅 저장과 알람", description = "채팅 저장과 알람")
     @PostMapping("/chatroom/message-alarm-record")
     public ResponseEntity<Response<Message>> sendNotification(@RequestBody Message message){
@@ -68,7 +64,6 @@ public class ChatController {
         return ResponseEntity.ok(Response.success(savedMessage));
     }
 
-    //메시지 전송
     @Operation(summary = "채팅방 전송", description = "채팅방 전송")
     @MessageMapping("/message")
     public void sendMessage(Message message, @Header("dogId") Long dogId){

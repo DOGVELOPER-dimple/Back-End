@@ -27,7 +27,6 @@ public class KafkaConsumerConfig {
     @Bean
     public ConsumerFactory<String, Message> consumerFactory() {
 
-        // Kafka Consumer 구성을 위한 설정값들을 설정 -> 변하지 않는 값이므로 ImmutableMap을 이용하여 설정
         Map<String, Object> consumerConfigurations =
                 ImmutableMap.<String, Object>builder()
                         .put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092")

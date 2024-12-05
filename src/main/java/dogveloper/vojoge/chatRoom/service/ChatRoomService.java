@@ -55,25 +55,22 @@ public class ChatRoomService {
     }
 
     public List<MyChatRoomResponse> getChatRoomList(Long dogId) {
-        // 사용자 이름으로 사용자 정보 조회
+
         Dog findDog = dogRepository.findById(dogId).orElseThrow();
 
-        // 사용자가 참여한 채팅방 목록을 조회하고, 각 채팅방 정보를 변환하여 리스트로 반환
+
         return chatRepository.findAllByCreateDogOrJoinDog(findDog,findDog).stream().map(chat -> {
             Dog dog;
             if (!Objects.equals(findDog.getId(), chat.getCreateDog())) {
-                // 채팅 생성자와 사용자가 다른 경우, 생성자 정보를 조회
+
                 dog = chat.getCreateDog();
             } else {
-                // 채팅 생성자와 사용자가 같은 경우, 조인 사용자 정보를 조회
                 dog = chat.getJoinDog();
             }
 
-            // 읽지 않은 메시지 수와 마지막 메시지 내용 조회
             Long unReadMessages = countUnReadMessages(chat.getId(), dogId);
             String lastMessage = findLastMessage(chat.getId());
 
-            // 채팅방 정보를 변환하여 반환
             return chat.toResponse(dog, unReadMessages, lastMessage);
         }).collect(Collectors.toList());
     }
