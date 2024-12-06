@@ -48,4 +48,19 @@ public class DogDTO {
                 .image(this.image)
                 .build();
     }
+    public static DogDTO fromEntity(Dog dog) {
+        return DogDTO.builder()
+                .name(dog.getName())
+                .age(dog.getAge())
+                .weight(dog.getWeight())
+                .gender(dog.getGender())
+                .puppySpecies(dog.getPuppySpecies())
+                .height(dog.getHeight())
+                .legLength(dog.getLegLength())
+                .bloodType(dog.getBloodType())
+                .registrationNumber(dog.getRegistrationNumber())
+                .image(dog.getImage())
+                .build();
+    }
+
 }
