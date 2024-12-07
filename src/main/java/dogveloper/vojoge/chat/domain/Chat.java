@@ -2,7 +2,6 @@ package dogveloper.vojoge.chat.domain;
 
 import dogveloper.vojoge.chatRoom.dto.MyChatRoomResponse;
 import dogveloper.vojoge.dog.domain.Dog;
-import dogveloper.vojoge.user.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

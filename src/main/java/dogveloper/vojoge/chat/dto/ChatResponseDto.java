@@ -21,11 +21,11 @@ public class ChatResponseDto {
     private boolean isRead;
     private boolean isMine;
 
-    public ChatResponseDto(Chatting chatting, Long dogId, String dogName) {
+    public ChatResponseDto(Chatting chatting, Long dogId) {
         this.id = chatting.getId();
         this.chatRoomNo = chatting.getChatRoomNo();
-        this.senderNo = dogId;
-        this.senderName = dogName;
+        this.senderNo = chatting.getSenderId();
+        this.senderName = chatting.getSenderName();
         this.content = chatting.getContent();
         this.sendDate = chatting.getSendDate();
         this.isRead = chatting.isRead();

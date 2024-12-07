@@ -61,7 +61,6 @@ public class StompHandler implements ChannelInterceptor {
 
                 log.info("Valid SEND message with dogId: {} and chatRoomNo: {}", dogId, chatRoomNo);
 
-                // 추가 로직 필요시 처리
             } catch (Exception e) {
                 log.error("Error during SEND: {}", e.getMessage(), e);
                 throw new MessageDeliveryException(message, "Failed to process SEND message", e);
