@@ -3,12 +3,9 @@ package dogveloper.vojoge.dog.service;
 import dogveloper.vojoge.dog.domain.Dog;
 import dogveloper.vojoge.dog.dto.DogDTO;
 import dogveloper.vojoge.dog.repository.DogRepository;
-import dogveloper.vojoge.jwt.JwtTokenProvider;
 import dogveloper.vojoge.social.user.User;
-import dogveloper.vojoge.social.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -16,47 +13,17 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DogService {
     private final DogRepository dogRepository;
-    private final UserRepository userRepository;
-    private final JwtTokenProvider jwtTokenProvider;
 
-    public Dog saveDog(String token, DogDTO dogDTO) {
-        if (!jwtTokenProvider.validateToken(token)) {
-            throw new IllegalArgumentException("Invalid token");
-        }
-
-        String userEmail = jwtTokenProvider.getEmailFromToken(token);
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new IllegalArgumentException("User not found for email: " + userEmail));
-
+    public Dog saveDog(User user, DogDTO dogDTO) {
         Dog dog = dogDTO.toEntity(user);
         return dogRepository.save(dog);
     }
 
-
-    public List<Dog> findByUserToken(String token) {
-        if (!jwtTokenProvider.validateToken(token)) {
-            throw new IllegalArgumentException("Invalid token");
-        }
-
-        String userEmail = jwtTokenProvider.getEmailFromToken(token);
-
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new IllegalArgumentException("User not found for email: " + userEmail));
-
+    public List<Dog> findByUser(User user) {
         return dogRepository.findByUserId(user.getId());
     }
 
-
-    public Dog updateDog(String token, Long id, DogDTO dogDTO) {
-        if (!jwtTokenProvider.validateToken(token)) {
-            throw new IllegalArgumentException("Invalid token");
-        }
-
-        String userEmail = jwtTokenProvider.getEmailFromToken(token);
-
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
+    public Dog updateDog(User user, Long id, DogDTO dogDTO) {
         Dog existingDog = findById(id);
 
         if (!existingDog.getUser().getId().equals(user.getId())) {
@@ -77,17 +44,7 @@ public class DogService {
         return dogRepository.save(existingDog);
     }
 
-
-    public void deleteDog(String token, Long id) {
-        if (!jwtTokenProvider.validateToken(token)) {
-            throw new IllegalArgumentException("Invalid token");
-        }
-
-        String userEmail = jwtTokenProvider.getEmailFromToken(token);
-
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
+    public void deleteDog(User user, Long id) {
         Dog existingDog = findById(id);
 
         if (!existingDog.getUser().getId().equals(user.getId())) {
@@ -97,10 +54,8 @@ public class DogService {
         dogRepository.deleteById(id);
     }
 
-
     public Dog findById(Long id) {
         return dogRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Dog not found"));
-
     }
 }

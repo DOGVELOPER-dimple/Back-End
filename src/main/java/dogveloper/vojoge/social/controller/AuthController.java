@@ -1,11 +1,11 @@
 package dogveloper.vojoge.social.controller;
 
-import dogveloper.vojoge.social.user.User;
 import dogveloper.vojoge.jwt.JwtStorageService;
-import dogveloper.vojoge.jwt.JwtTokenProvider;
-import dogveloper.vojoge.social.user.UserRepository;
+import dogveloper.vojoge.social.user.User;
+import dogveloper.vojoge.social.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,24 +14,18 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
+@RequiredArgsConstructor
 public class AuthController {
-
-    private final JwtTokenProvider jwtTokenProvider;
+    private final UserService userService;
     private final JwtStorageService jwtStorageService;
-    private final UserRepository userRepository;
-
-    public AuthController(JwtTokenProvider jwtTokenProvider, JwtStorageService jwtStorageService, UserRepository userRepository) {
-        this.jwtTokenProvider = jwtTokenProvider;
-        this.jwtStorageService = jwtStorageService;
-        this.userRepository = userRepository;
-    }
 
     @SneakyThrows
     @GetMapping("/login/google")
     @Operation(summary = "구글 로그인 //준상")
-    public void googleLoginRedirect(HttpServletResponse response){
+    public void googleLoginRedirect(HttpServletResponse response) {
         response.sendRedirect("/oauth2/authorization/google");
     }
+
     @SneakyThrows
     @GetMapping("/login/kakao")
     @Operation(summary = "카카오 로그인 //준상")
@@ -39,16 +33,6 @@ public class AuthController {
         response.sendRedirect("/oauth2/authorization/kakao");
     }
 
-/*
-    @GetMapping("/login/urls")
-    @Operation(summary = "카카오, 구글 로그인 url 제공 //준상")
-    public ResponseEntity<Map<String, String>> getLoginUrls() {
-        Map<String, String> loginUrls = new HashMap<>();
-        loginUrls.put("google", "http://localhost:8080/oauth2/authorization/google");
-        loginUrls.put("kakao", "http://localhost:8080/oauth2/authorization/kakao");
-        return ResponseEntity.ok(loginUrls);
-    }
-*/
     @GetMapping("/protected")
     @Operation(summary = "보호된 엔드포인트 (JWT 검증 테스트용) //준상")
     public ResponseEntity<Map<String, String>> protectedEndpoint() {
@@ -57,47 +41,19 @@ public class AuthController {
 
     @PostMapping("/logout")
     @Operation(summary = "로그아웃 처리 //준상")
-    public ResponseEntity<Map<String, String>> logout(@RequestHeader("Authorization") String authorization) {
-        if (authorization != null && authorization.startsWith("Bearer ")) {
-            String token = authorization.substring(7);
-            System.out.println("로그아웃 처리된 토큰: " + token);
+    public ResponseEntity<Map<String, String>> logout() {
+        User user = userService.getAuthenticatedUser();
+        String token = jwtStorageService.getEmailByToken(user.getEmail());
+        boolean isDeleted = jwtStorageService.deleteToken(token);
+        String message = isDeleted ? "Redis에서 토큰 삭제 완료" : "Redis에서 토큰 삭제 실패";
 
-            // Redis에서 토큰 삭제
-            boolean isDeleted = jwtStorageService.deleteToken(token);
-            if (isDeleted) {
-                System.out.println("Redis에서 토큰 삭제 완료");
-            } else {
-                System.err.println("Redis에서 토큰 삭제 실패");
-            }
-        }
-        return ResponseEntity.ok(Map.of("message", "로그아웃 완료!"));
+        return ResponseEntity.ok(Map.of("message", "로그아웃 완료!", "status", message));
     }
 
-    @GetMapping("/success")
-    @Operation(summary = "JWT 반환 엔드포인트")
-    public ResponseEntity<Map<String, String>> getJwtToken(
-            @RequestParam String email
-    ) {
-        // JWT 생성
-        String token = jwtTokenProvider.createToken(email);
-
-        // JSON 형식으로 반환
-        return ResponseEntity.ok(Map.of("token", token));
-    }
     @GetMapping("/userinfo")
     @Operation(summary = "사용자 정보 조회 //준상")
-    public ResponseEntity<Map<String, String>> getUserInfo(@RequestHeader("Authorization") String authorization) {
-        if (authorization == null || !authorization.startsWith("Bearer ")) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Invalid or missing Authorization header"));
-        }
-
-        String token = authorization.substring(7);
-        String email = jwtTokenProvider.getEmailFromToken(token);
-
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found for email: " + email));
-
+    public ResponseEntity<Map<String, String>> getUserInfo() {
+        User user = userService.getAuthenticatedUser();
 
         Map<String, String> userInfo = Map.of(
                 "email", user.getEmail(),
@@ -108,6 +64,4 @@ public class AuthController {
 
         return ResponseEntity.ok(userInfo);
     }
-
-
 }

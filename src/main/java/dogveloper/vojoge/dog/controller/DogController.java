@@ -3,6 +3,8 @@ package dogveloper.vojoge.dog.controller;
 import dogveloper.vojoge.dog.domain.Dog;
 import dogveloper.vojoge.dog.dto.DogDTO;
 import dogveloper.vojoge.dog.service.DogService;
+import dogveloper.vojoge.social.user.User;
+import dogveloper.vojoge.social.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,20 +17,15 @@ import java.util.List;
 @RequestMapping("/dogs")
 public class DogController {
     private final DogService dogService;
+    private final UserService userService;
 
     @PostMapping
     @Operation(summary = "반려견 추가 //준상")
-    public ResponseEntity<Dog> createDog(@RequestHeader("Authorization") String authorizationHeader, @RequestBody DogDTO dogDTO) {
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            throw new IllegalArgumentException("Invalid or missing Authorization header");
-        }
-
-        String token = authorizationHeader.replace("Bearer ", "").trim();
-        Dog createdDog = dogService.saveDog(token, dogDTO);
+    public ResponseEntity<Dog> createDog(@RequestBody DogDTO dogDTO) {
+        User user = userService.getAuthenticatedUser();
+        Dog createdDog = dogService.saveDog(user, dogDTO);
         return ResponseEntity.ok(createdDog);
     }
-
-
 
     @GetMapping("/{id}")
     @Operation(summary = "반려견 단일 조회 //준상")
@@ -40,59 +37,29 @@ public class DogController {
 
     @GetMapping
     @Operation(summary = "사용자 반려견 목록 조회 //준상")
-    public ResponseEntity<List<DogDTO>> getDogsByUser(@RequestHeader("Authorization") String authorizationHeader) {
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            throw new IllegalArgumentException("Invalid or missing Authorization header");
-        }
-
-        String token = authorizationHeader.replace("Bearer ", "").trim();
-
-        List<DogDTO> dogDTOs = dogService.findByUserToken(token)
+    public ResponseEntity<List<DogDTO>> getDogsByUser() {
+        User user = userService.getAuthenticatedUser();
+        List<DogDTO> dogDTOs = dogService.findByUser(user)
                 .stream()
                 .map(DogDTO::fromEntity)
                 .toList();
-
         return ResponseEntity.ok(dogDTOs);
     }
 
-
     @PutMapping("/{id}")
     @Operation(summary = "반려견 정보 수정 //준상")
-    public ResponseEntity<DogDTO> updateDog(@RequestHeader("Authorization") String authorizationHeader,
-                                            @PathVariable Long id,
-                                            @RequestBody DogDTO dogDTO) {
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            throw new IllegalArgumentException("Invalid or missing Authorization header");
-        }
-
-        String token = authorizationHeader.replace("Bearer ", "").trim();
-
-        Dog updatedDog = dogService.updateDog(token, id, dogDTO);
+    public ResponseEntity<DogDTO> updateDog(@PathVariable Long id, @RequestBody DogDTO dogDTO) {
+        User user = userService.getAuthenticatedUser();
+        Dog updatedDog = dogService.updateDog(user, id, dogDTO);
         DogDTO responseDTO = DogDTO.fromEntity(updatedDog);
-
         return ResponseEntity.ok(responseDTO);
     }
 
-
     @DeleteMapping("/{id}")
     @Operation(summary = "반려견 삭제 //준상")
-    public ResponseEntity<Void> deleteDog(@RequestHeader("Authorization") String authorizationHeader, @PathVariable Long id) {
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            throw new IllegalArgumentException("Invalid or missing Authorization header");
-        }
-
-        String token = authorizationHeader.replace("Bearer ", "").trim();
-
-        dogService.deleteDog(token, id);
+    public ResponseEntity<Void> deleteDog(@PathVariable Long id) {
+        User user = userService.getAuthenticatedUser();
+        dogService.deleteDog(user, id);
         return ResponseEntity.noContent().build();
     }
-
-
-    private String extractToken(String authorizationHeader) {
-        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-            return authorizationHeader.substring(7); // "Bearer " 제거
-        }
-        throw new IllegalArgumentException("Invalid Authorization header");
-    }
-
 }
