@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -37,6 +38,7 @@ public class SecurityConfig {
                     var config = new CorsConfiguration();
                     config.setAllowedOrigins(List.of(
                             "http://localhost:3000",
+                            "http://localhost:8080",
                             "http://10.0.2.2:8080",
                             "https://4dce-222-118-182-61.ngrok-free.app",
                             "https://1df2-203-237-200-56.ngrok-free.app"));
@@ -47,7 +49,21 @@ public class SecurityConfig {
                 }))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/login/**", "/auth/logout", "/oauth2/**").permitAll()
+                        .requestMatchers(
+                                "/auth/login/**",
+                                "/auth/logout",
+                                "/oauth2/**",
+                                "/static/**",
+                                "/index.html",
+                                "/",
+                                "/css/**",
+                                "/js/**",
+                                "/chatPage",
+                                "/chatroom/**",
+                                "/chat/**",
+                                "/subscribe/**",
+                                "/publish/**"
+                        ).permitAll()
                         .requestMatchers("/auth/protected").authenticated()
                         .anyRequest().authenticated()
                 )
@@ -58,15 +74,13 @@ public class SecurityConfig {
                         .failureUrl("/auth/login/failure")
                 )
                 .headers(headers -> headers
-                        .addHeaderWriter((request, response) -> {
-                            response.addHeader("Content-Security-Policy", "default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; " +
-                                    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-                                    "font-src 'self' https://fonts.gstatic.com; " +
-                                    "script-src 'self' 'unsafe-inline'; " +
-                                    "connect-src 'self';");
-                        })
-                )
-        ;
+                        .contentSecurityPolicy(csp -> csp
+                                .policyDirectives("default-src 'self'; " +
+                                        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
+                                        "connect-src 'self' ws://localhost:8080; " +
+                                        "style-src 'self' 'unsafe-inline'; " +
+                                        "font-src 'self' https://fonts.gstatic.com; " +
+                                        "img-src 'self';")));
 
         return http.build();
     }

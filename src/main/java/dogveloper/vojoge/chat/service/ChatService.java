@@ -39,7 +39,7 @@ public class ChatService {
         Dog dog = dogRepository.findById(dogId)
                 .orElseThrow(() -> new IllegalArgumentException("Dog not found with ID"));
         List<ChatResponseDto> chattingList = mongoChatRepository.findByChatRoomNo(chatRoomNo).stream()
-                .map(chat -> new ChatResponseDto(chat, dog.getId(), dog.getName()))
+                .map(chat -> new ChatResponseDto(chat, dog.getId()))
                 .collect(Collectors.toList());
         return ChattingHistoryResponseDto.builder()
                 .dogName(dog.getName())
@@ -47,8 +47,8 @@ public class ChatService {
                 .build();
     }
 
-    public void sendMessage(Message message, Long id){
-        Dog dog = dogRepository.findById(id)
+    public void sendMessage(Message message, Long dogId){
+        Dog dog = dogRepository.findById(dogId)
                 .orElseThrow(() -> new IllegalArgumentException("Dog not found with ID"));
 
         boolean isRead = chatRoomService.isAllConnected(message.getChatNo());
@@ -57,7 +57,7 @@ public class ChatService {
 
         sender.send(KAFKA_TOPIC, message);
 
-        Chatting chatting = message.toEntity(id);
+        Chatting chatting = message.toEntity(dogId);
         Chatting savedChat = mongoChatRepository.save(chatting);
         message.setId(savedChat.getId());
     }

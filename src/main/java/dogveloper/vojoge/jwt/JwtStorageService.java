@@ -1,5 +1,6 @@
 package dogveloper.vojoge.jwt;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
@@ -10,7 +11,7 @@ public class JwtStorageService {
 
     private final RedisTemplate<String, String> redisTemplate;
 
-    public JwtStorageService(RedisTemplate<String, String> redisTemplate) {
+    public JwtStorageService(@Qualifier("redisTemplate2") RedisTemplate<String, String> redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 
