@@ -8,6 +8,7 @@ import dogveloper.vojoge.social.user.User;
 import dogveloper.vojoge.social.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -100,5 +101,6 @@ public class DogService {
     public Dog findById(Long id) {
         return dogRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Dog not found"));
+
     }
 }

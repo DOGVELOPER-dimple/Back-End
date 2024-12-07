@@ -14,7 +14,6 @@ import lombok.NoArgsConstructor;
 public class Dog {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)

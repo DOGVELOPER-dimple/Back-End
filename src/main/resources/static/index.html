@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket STOMP Client</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
+</head>
+<body>
+<h1>WebSocket STOMP Client</h1>
+<div>
+    <button id="connect">Connect</button>
+    <button id="disconnect">Disconnect</button>
+</div>
+<div>
+    <input id="chatNo" placeholder="Chat Room No (Default: 2)" />
+    <input id="message" placeholder="Message" />
+    <input id="dogId" placeholder="Dog ID (Required for Sending Messages)" />
+    <button id="send">Send Message</button>
+</div>
+<div>
+    <h3>Received Messages:</h3>
+    <ul id="messages"></ul>
+</div>
+<p id="connectionStatus" style="color: green;">Not Connected</p>
+
+<script>
+    let stompClient = null;
+
+    // 연결 상태 업데이트 함수
+    function updateConnectionStatus(status, color) {
+        const statusElement = document.getElementById("connectionStatus");
+        statusElement.textContent = status;
+        statusElement.style.color = color;
+    }
+
+    // 이전 채팅 기록 가져오기 함수
+    function fetchChatHistory(chatNo) {
+        fetch(`http://localhost:8080/chatroom/${chatNo}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Failed to fetch chat history");
+                }
+                return response.json();
+            })
+            .then(data => {
+                const chatHistory = data.result.chatList; // 서버 응답에서 chatList 추출
+                const messageList = document.getElementById("messages");
+
+                chatHistory.forEach(msg => {
+                    const listItem = document.createElement("li");
+                    listItem.textContent = `From Chat Room ${msg.chatNo}: ${msg.content} (Sent by ${msg.senderName || msg.senderId} at ${msg.sendTime})`;
+                    messageList.appendChild(listItem);
+                });
+
+                console.log("Fetched chat history:", chatHistory);
+            })
+            .catch(error => console.error("Error fetching chat history:", error));
+    }
+
+    // 서버에 연결
+    document.getElementById("connect").addEventListener("click", function () {
+        const socket = new SockJS('http://localhost:8080/chat');
+        stompClient = Stomp.over(socket);
+
+        updateConnectionStatus("Connecting...", "orange");
+
+        const chatNo = document.getElementById("chatNo").value || "2"; // 기본값 2
+
+        // 이전 데이터 가져오기
+        fetchChatHistory(chatNo);
+
+        stompClient.connect({}, function (frame) {
+            console.log('Connected: ' + frame);
+            updateConnectionStatus("Connected", "green");
+
+            // 채팅방 구독
+            stompClient.subscribe(`/subscribe/${chatNo}`, function (message) {
+                const receivedMessage = JSON.parse(message.body);
+                const messageList = document.getElementById("messages");
+                const listItem = document.createElement("li");
+                listItem.textContent = `From Chat Room ${chatNo}: ${receivedMessage.content}`;
+                messageList.appendChild(listItem);
+            });
+        }, function (error) {
+            console.error('Connection error: ', error);
+            updateConnectionStatus("Connection Failed", "red");
+        });
+    });
+
+    // 서버에서 연결 종료
+    document.getElementById("disconnect").addEventListener("click", function () {
+        if (stompClient !== null) {
+            stompClient.disconnect();
+            console.log("Disconnected");
+            updateConnectionStatus("Disconnected", "red");
+        }
+    });
+
+    // 메시지 전송
+    document.getElementById("send").addEventListener("click", function () {
+        const chatNo = document.getElementById("chatNo").value || "2"; // 기본값 2
+        const messageContent = document.getElementById("message").value || "Hello, World!";
+        const dogId = document.getElementById("dogId").value;
+
+        if (!dogId) {
+            alert("Please enter a valid Dog ID to send a message.");
+            return;
+        }
+
+        const message = {
+            chatNo: chatNo,
+            content: messageContent,
+            senderId: dogId, // 메시지 발신자
+            sendTime: new Date().toISOString() // 현재 시간 추가
+        };
+
+        if (stompClient && stompClient.connected) {
+            stompClient.send(
+                '/publish/message',
+                { "dogId": dogId, "chatRoomNo": chatNo }, // 헤더에 dogId와 chatRoomNo 포함
+                JSON.stringify(message)
+            );
+            console.log('Message sent: ', message);
+        } else {
+            console.log("You need to connect first!");
+        }
+    });
+</script>
+</body>
+</html>
