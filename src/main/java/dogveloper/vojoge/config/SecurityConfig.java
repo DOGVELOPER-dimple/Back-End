@@ -1,13 +1,12 @@
 package dogveloper.vojoge.config;
 
-import dogveloper.vojoge.social.handler.OAuth2LoginSuccessHandler;
 import dogveloper.vojoge.jwt.JwtAuthenticationFilter;
+import dogveloper.vojoge.social.handler.OAuth2LoginSuccessHandler;
 import dogveloper.vojoge.social.service.CustomOAuth2UserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -41,7 +40,7 @@ public class SecurityConfig {
                             "http://localhost:8080",
                             "http://10.0.2.2:8080",
                             "https://4dce-222-118-182-61.ngrok-free.app",
-                            "https://1df2-203-237-200-56.ngrok-free.app"));
+                            "https://d87d-222-118-182-61.ngrok-free.app"));
                     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
                     config.setAllowedHeaders(List.of("*"));
                     config.setAllowCredentials(true);
@@ -62,7 +61,8 @@ public class SecurityConfig {
                                 "/chatroom/**",
                                 "/chat/**",
                                 "/subscribe/**",
-                                "/publish/**"
+                                "/publish/**",
+                                "/auth/success"
                         ).permitAll()
                         .requestMatchers("/auth/protected").authenticated()
                         .anyRequest().authenticated()
