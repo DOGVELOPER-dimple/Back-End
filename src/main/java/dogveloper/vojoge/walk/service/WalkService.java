@@ -3,6 +3,8 @@ package dogveloper.vojoge.walk.service;
 import dogveloper.vojoge.dog.domain.Dog;
 import dogveloper.vojoge.dog.repository.DogRepository;
 import dogveloper.vojoge.dog.service.DogService;
+import dogveloper.vojoge.social.user.User;
+import dogveloper.vojoge.social.user.UserService;
 import dogveloper.vojoge.walk.domain.Walk;
 import dogveloper.vojoge.walk.dto.request.RequestWalkDto;
 import dogveloper.vojoge.walk.dto.response.ResponseWalkDetailDto;
@@ -22,9 +24,11 @@ import java.util.Optional;
 public class WalkService {
     private final WalkRepository walkRepository;
     private final DogService dogService;
+    private final UserService userService;
     public Walk createWalk(Long dogId, RequestWalkDto requestWalkDto){
+        User user = userService.getAuthenticatedUser();
         Dog dog = dogService.findById(dogId);
-        if(dog != null) {
+        if(dog != null && dog.getUser().equals(user)) {
             Walk walk = requestWalkDto.toEntity(dog);
             return walkRepository.save(walk);
         }
