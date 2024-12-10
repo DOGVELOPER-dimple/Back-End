@@ -26,6 +26,7 @@ public class JwtStorageService {
             System.out.println("TTL: " + validityInMilliseconds + "ms");
 
             redisTemplate.opsForValue().set(token, email, validityInMilliseconds, TimeUnit.MILLISECONDS);
+            redisTemplate.opsForValue().set(email, token, validityInMilliseconds, TimeUnit.MILLISECONDS);
 
             System.out.println("Redis에 저장된 값 확인: " + redisTemplate.opsForValue().get(token));
 
@@ -58,6 +59,15 @@ public class JwtStorageService {
             return null;
         }
     }
+    public String getTokenByEmail(String email) {
+        try {
+            return redisTemplate.opsForValue().get(email); // 이메일 → 토큰 조회
+        } catch (Exception e) {
+            System.err.println("Redis 조회 실패: " + e.getMessage());
+            return null;
+        }
+    }
+
 
     public boolean deleteToken(String token) {
         try {

@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,7 +19,6 @@ import java.util.Map;
 public class AuthController {
     private final UserService userService;
     private final JwtStorageService jwtStorageService;
-
     @SneakyThrows
     @GetMapping("/login/google")
     @Operation(summary = "구글 로그인 //준상")
@@ -63,5 +63,20 @@ public class AuthController {
         );
 
         return ResponseEntity.ok(userInfo);
+    }
+    @GetMapping("/success")
+    @Operation(summary = "이메일 기반 Redis에서 토큰 조회")
+    public ResponseEntity<Map<String, String>> getTokenByEmail(@RequestParam("email") String email) {
+        // 이메일 기반으로 Redis에서 토큰 조회
+        String token = jwtStorageService.getTokenByEmail(email);
+
+        if (token == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "해당 이메일로 저장된 토큰이 없습니다."));
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "token", token
+        ));
     }
 }
