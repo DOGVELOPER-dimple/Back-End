@@ -41,43 +41,31 @@ public class LocationRedisService {
         Long added = redisTemplate.opsForGeo().add(GEO_KEY, new Point(longitude, latitude), String.valueOf(user.getId()));
 
         if (added == null || added == 0) {
-            log.error("Failed to save user location to Redis: userId={}, latitude={}, longitude={}",
+            log.error("fail add not: userId={}, latitude={}, longitude={}",
                     user.getId(), latitude, longitude);
         } else {
-            log.info("Saved user location: userId={}, latitude={}, longitude={}",
+            log.info("save: userId={}, latitude={}, longitude={}",
                     user.getId(), latitude, longitude);
         }
 
-        // 바로 저장된 데이터 확인
         List<Point> savedPoints = redisTemplate.opsForGeo().position(GEO_KEY, String.valueOf(user.getId()));
-        if (savedPoints != null && !savedPoints.isEmpty()) {
-            Point savedPoint = savedPoints.get(0);
-            log.info("Retrieved saved location: userId={}, latitude={}, longitude={}",
-                    user.getId(),
-                    Math.round(savedPoint.getY() * 1e6) / 1e6,
-                    Math.round(savedPoint.getX() * 1e6) / 1e6
-            );
-        } else {
-            log.warn("No location found for userId={} immediately after saving.", user.getId());
-        }
 
         redisTemplate.expire(GEO_KEY, 20, TimeUnit.SECONDS);
     }
 
     public List<ResponseRedisDto> getNearbyUsers(double latitude, double longitude) {
         Circle circle = new Circle(new Point(longitude, latitude), new Distance(1000.0, Metrics.METERS));
-        log.info("Circle Center: Latitude={}, Longitude={}, Radius={} meters", latitude, longitude, 1000);
+        log.info("latitude={}, longitude={} radius={}", latitude, longitude, 1000);
 
         User user = userService.getAuthenticatedUser();
 
         GeoResults<RedisGeoCommands.GeoLocation<String>> results = redisTemplate.opsForGeo().radius(GEO_KEY, circle);
 
         if (results == null || results.getContent().isEmpty()) {
-            log.warn("No nearby users found for latitude={}, longitude={}", latitude, longitude);
+            log.warn("not found latitude={}, longitude={}", latitude, longitude);
             return Collections.emptyList();
         }
 
-        log.info("Found {} results within radius.", results.getContent().size());
 
         return results.getContent()
                 .stream()
@@ -86,12 +74,10 @@ public class LocationRedisService {
 
                     List<Point> points = redisTemplate.opsForGeo().position(GEO_KEY, location.getName());
                     if (points == null || points.isEmpty()) {
-                        log.warn("No Point found for User {}", location.getName());
                         return null;
                     }
-
                     Point point = points.get(0);
-                    log.info("User found: userId={}, latitude={}, longitude={}",
+                    log.info("find data: userId={}, latitude={}, longitude={}",
                             location.getName(), point.getY(), point.getX());
 
                     return new ResponseRedisDto(
