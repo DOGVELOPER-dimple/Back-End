@@ -18,9 +18,11 @@ public class LocationController {
 
     @Operation(summary = "주변 위치 가져오기", description = "주변 위치 가져오기")
     @GetMapping("/nearby")
-    public List<ResponseRedisDto> getNearbyUsers(@RequestParam double latitude,
+    public List<ResponseRedisDto> getNearbyUsers(@RequestParam Long dogId,
+                                                 @RequestParam double latitude,
                                                  @RequestParam double longitude) {
-        locationRedisService.saveUserLocation(latitude, longitude);
-        return locationRedisService.getNearbyUsers(latitude, longitude);
+        if(!locationRedisService.saveUserLocation(dogId, latitude, longitude))
+            return null;
+        return locationRedisService.getNearbyUsers(dogId, latitude, longitude);
     }
 }

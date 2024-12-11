@@ -10,6 +10,14 @@ import lombok.NoArgsConstructor;
 public class ResponseRedisDto {
     private Long id;
 
+    private String name;
+
+    private int age;
+
+    private String puppySpecies;
+
+    private String image;
+
     private double latitude;
 
     private double longitude;
