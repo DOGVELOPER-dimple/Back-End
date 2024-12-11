@@ -2,11 +2,7 @@ package dogveloper.vojoge.location.service;
 
 import dogveloper.vojoge.dog.domain.Dog;
 import dogveloper.vojoge.dog.service.DogService;
-import dogveloper.vojoge.location.dto.RequestWalkLocationDto;
 import dogveloper.vojoge.location.dto.ResponseRedisDto;
-import dogveloper.vojoge.social.user.User;
-import dogveloper.vojoge.social.user.UserService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.geo.Circle;

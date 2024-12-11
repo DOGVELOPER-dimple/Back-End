@@ -1,6 +1,5 @@
 package dogveloper.vojoge.location.controller;
 
-import dogveloper.vojoge.location.dto.RequestWalkLocationDto;
 import dogveloper.vojoge.location.dto.ResponseRedisDto;
 import dogveloper.vojoge.location.service.LocationRedisService;
 import io.swagger.v3.oas.annotations.Operation;
