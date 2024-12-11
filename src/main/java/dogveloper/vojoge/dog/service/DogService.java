@@ -4,6 +4,7 @@ import dogveloper.vojoge.dog.domain.Dog;
 import dogveloper.vojoge.dog.dto.DogDTO;
 import dogveloper.vojoge.dog.repository.DogRepository;
 import dogveloper.vojoge.social.user.User;
+import dogveloper.vojoge.social.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +14,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DogService {
     private final DogRepository dogRepository;
+    private final UserService userService;
 
     public Dog saveDog(User user, DogDTO dogDTO) {
         Dog dog = dogDTO.toEntity(user);
@@ -23,6 +25,10 @@ public class DogService {
         return dogRepository.findByUserId(user.getId());
     }
 
+    public boolean validation(Dog dog){
+        User user = userService.getAuthenticatedUser();
+        return dog.getUser().equals(user);
+    }
     public Dog updateDog(User user, Long id, DogDTO dogDTO) {
         Dog existingDog = findById(id);
 
