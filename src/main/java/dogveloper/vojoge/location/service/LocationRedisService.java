@@ -17,7 +17,6 @@ import org.springframework.stereotype.Component;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -81,7 +80,7 @@ public class LocationRedisService {
                     if (points == null || points.isEmpty()) {
                         return null;
                     }
-                    Point point = points.get(0);
+                    Point point = points.getFirst();
                     log.info("find data: userId={}, latitude={}, longitude={}",
                             location.getName(), point.getY(), point.getX());
 
