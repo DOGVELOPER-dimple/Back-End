@@ -3,6 +3,8 @@ package dogveloper.vojoge.config;
 import dogveloper.vojoge.jwt.JwtAuthenticationFilter;
 import dogveloper.vojoge.social.handler.OAuth2LoginSuccessHandler;
 import dogveloper.vojoge.social.service.CustomOAuth2UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -18,6 +20,8 @@ import java.util.List;
 @Configuration
 public class SecurityConfig {
 
+    private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
+
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -32,56 +36,72 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .cors(cors -> cors.configurationSource(request -> {
-                    var config = new CorsConfiguration();
-                    config.setAllowedOrigins(List.of(
-                            "http://localhost:3000",
-                            "http://localhost:8080",
-                            "http://10.0.2.2:8080",
-                            "https://4dce-222-118-182-61.ngrok-free.app",
-                            "https://d87d-222-118-182-61.ngrok-free.app"));
-                    config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
-                    config.setAllowedHeaders(List.of("*"));
-                    config.setAllowCredentials(true);
-                    return config;
-                }))
-                .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/auth/login/**",
-                                "/auth/logout",
-                                "/oauth2/**",
-                                "/static/**",
-                                "/index.html",
-                                "/",
-                                "/css/**",
-                                "/js/**",
-                                "/chatPage",
-                                "/chatroom/**",
-                                "/chat/**",
-                                "/subscribe/**",
-                                "/publish/**",
-                                "/auth/success"
-                        ).permitAll()
-                        .requestMatchers("/auth/protected").authenticated()
-                        .anyRequest().authenticated()
-                )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .oauth2Login(oauth -> oauth
-                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
-                        .successHandler(oAuth2LoginSuccessHandler)
-                        .failureUrl("/auth/login/failure")
-                )
-                .headers(headers -> headers
-                        .contentSecurityPolicy(csp -> csp
-                                .policyDirectives("default-src 'self'; " +
-                                        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
-                                        "connect-src 'self' ws://localhost:8080; " +
-                                        "style-src 'self' 'unsafe-inline'; " +
-                                        "font-src 'self' https://fonts.gstatic.com; " +
-                                        "img-src 'self';")));
 
+        http.cors(cors -> {
+            cors.configurationSource(request -> {
+                var config = new CorsConfiguration();
+                config.setAllowedOrigins(List.of(
+                        "http://localhost:3000",
+                        "http://localhost:8080",
+                        "http://10.0.2.2:8080",
+                        "https://f7e4-1-242-93-85.ngrok-free.app",
+                        "http://3.38.209.147:8080",
+                        "http://3.38.209.147"
+                ));
+                config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
+                config.setAllowedHeaders(List.of("*"));
+                config.setAllowCredentials(true);
+                return config;
+            });
+        });
+
+        http.csrf(AbstractHttpConfigurer::disable);
+
+        http.authorizeHttpRequests(auth -> {
+            auth.requestMatchers(
+                            "/auth/login/**",
+                            "/auth/logout",
+                            "/oauth2/**",
+                            "/static/**",
+                            "/index.html",
+                            "/",
+                            "/css/**",
+                            "/js/**",
+                            "/chatPage",
+                            "/chatroom/**",
+                            "/chat/**",
+                            "/subscribe/**",
+                            "/publish/**",
+                            "/auth/success",
+                            "/dogs",
+                            "/swagger-ui/**",
+                            "/v3/api-docs/**",
+                            "/swagger-resources/**",
+                            "/webjars/**",
+                            "/swagger-ui"
+                    ).permitAll()
+                    .requestMatchers("/auth/protected", "/dogs").authenticated()
+                    .anyRequest().authenticated();
+        });
+
+        http.formLogin(AbstractHttpConfigurer::disable);
+
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        http.oauth2Login(oauth -> {
+            oauth.userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService));
+            oauth.successHandler(oAuth2LoginSuccessHandler);
+            oauth.failureUrl("/auth/login/failure");
+        });
+
+        http.headers(headers -> headers
+                .contentSecurityPolicy(csp -> csp
+                        .policyDirectives("default-src 'self'; " +
+                                "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
+                                "connect-src 'self' ws://localhost:8080; " +
+                                "style-src 'self' 'unsafe-inline'; " +
+                                "font-src 'self' https://fonts.gstatic.com; " +
+                                "img-src 'self';")));
         return http.build();
     }
 
