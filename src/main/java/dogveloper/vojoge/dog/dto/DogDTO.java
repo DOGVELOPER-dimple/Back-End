@@ -2,11 +2,15 @@ package dogveloper.vojoge.dog.dto;
 
 import dogveloper.vojoge.dog.domain.Dog;
 import dogveloper.vojoge.social.user.User;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 public class DogDTO {
+    @Schema(hidden = true) // Swagger 문서에서 숨김 처리
+    private Long id;
+
     private String name;
     private int age;
     private double weight;
@@ -19,8 +23,9 @@ public class DogDTO {
     private String image;
 
     @Builder
-    public DogDTO(String name, int age, double weight, String gender, String puppySpecies, double height,
+    public DogDTO(Long id, String name, int age, double weight, String gender, String puppySpecies, double height,
                   double legLength, String bloodType, String registrationNumber, String image) {
+        this.id = id; // id 필드 초기화
         this.name = name;
         this.age = age;
         this.weight = weight;
@@ -48,8 +53,10 @@ public class DogDTO {
                 .image(this.image)
                 .build();
     }
+
     public static DogDTO fromEntity(Dog dog) {
         return DogDTO.builder()
+                .id(dog.getId()) // id 추가
                 .name(dog.getName())
                 .age(dog.getAge())
                 .weight(dog.getWeight())
@@ -62,5 +69,4 @@ public class DogDTO {
                 .image(dog.getImage())
                 .build();
     }
-
 }

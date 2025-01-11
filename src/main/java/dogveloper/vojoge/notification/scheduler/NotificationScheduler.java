@@ -19,7 +19,7 @@ public class NotificationScheduler {
     private final NotificationRepository notificationRepository;
     private final NotificationController notificationController;
 
-    @Scheduled(fixedRate = 5000) // 5초마다 실행
+    @Scheduled(fixedRate = 100000) // 5초마다 실행
     public void sendScheduledNotifications() {
         List<Notification> notifications = notificationRepository.findByScheduledTimeBeforeAndSent(LocalDateTime.now(), false);
 
