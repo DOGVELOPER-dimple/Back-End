@@ -15,6 +15,7 @@ import dogveloper.vojoge.chatRoom.service.ChatRoomService;
 import dogveloper.vojoge.dog.domain.Dog;
 import dogveloper.vojoge.dog.repository.DogRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
 import static dogveloper.vojoge.alarm.enums.AlarmType.NEW_CHAT;
 import static dogveloper.vojoge.chat.kafka.KafkaConstants.KAFKA_TOPIC;
 
+@Slf4j
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
@@ -95,7 +97,9 @@ public class ChatService {
                 .content(dog.getName() + "님이 입장했습니다.")
                 .senderName(dog.getName())
                 .build();
+        log.info("updateMessage ");
         sender.send(KAFKA_TOPIC, message);
+        log.info("updateMessage sendder 완");
     }
 
     public void leaveMessage(Long dogId, Long chatRoomNo) {

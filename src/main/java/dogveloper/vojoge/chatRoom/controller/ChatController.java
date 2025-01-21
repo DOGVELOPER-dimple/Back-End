@@ -11,6 +11,7 @@ import dogveloper.vojoge.chatRoom.dto.Response;
 import dogveloper.vojoge.chatRoom.service.ChatRoomService;
 import dogveloper.vojoge.dog.domain.Dog;
 import dogveloper.vojoge.dog.service.DogService;
+import dogveloper.vojoge.social.user.User;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,34 +33,31 @@ public class ChatController {
 
     @Operation(summary = "채팅방 생성", description = "채팅방 생성")
     @PostMapping("/chatroom")
-    public ResponseEntity<Response<Chat>> createChatRoom(@RequestBody ChatRequestDto requestDto){
-        Long dogId = 1L;
+    public ResponseEntity<Response<MyChatRoomResponse>> createChatRoom(@RequestBody ChatRequestDto requestDto){
         //채팅방 생성
-        Chat chat = chatRoomService.makeChatRoom(dogId, requestDto);
-        return ResponseEntity.ok(Response.success(chat));
+        return ResponseEntity.ok(Response.success(chatRoomService.makeChatRoom(requestDto)));
     }
 
     @Operation(summary = "나의 채팀룸", description = "채팅룸")
-    @GetMapping("/my-chatroom")
-    public ResponseEntity<Response<List<MyChatRoomResponse>>> chatRoomList(){
-        Long dogId = 1L;
+    @GetMapping("/my-chatroom/{dogId}")
+    public ResponseEntity<Response<List<MyChatRoomResponse>>> chatRoomList(@PathVariable Long dogId){
         List<MyChatRoomResponse> chatRoomList = chatRoomService.getChatRoomList(dogId);
 
         return ResponseEntity.ok(Response.success(chatRoomList));
     }
 
     @Operation(summary = "채팅 내역 조회", description = "채팅 내역 조회")
-    @GetMapping("/chatroom/{roomNo}")
-    public ResponseEntity<Response<ChattingHistoryResponseDto>> chattingList(@PathVariable Long roomNo){
-        Dog dog =  dogService.findById(1L);
+    @GetMapping("/chatroom/{roomNo}/{dogId}")
+    public ResponseEntity<Response<ChattingHistoryResponseDto>> chattingList(@PathVariable Long roomNo, @PathVariable Long dogId){
+        Dog dog =  dogService.findById(dogId);
         ChattingHistoryResponseDto chattingList = chatService.getChattingList(roomNo, dog.getId());
         return ResponseEntity.ok(Response.success(chattingList));
     }
 
     @Operation(summary = "채팅 저장과 알람", description = "채팅 저장과 알람")
-    @PostMapping("/chatroom/message-alarm-record")
-    public ResponseEntity<Response<Message>> sendNotification(@RequestBody Message message){
-        Dog dog = dogService.findById(1L);
+    @PostMapping("/chatroom/message-alarm-record/{dogId}")
+    public ResponseEntity<Response<Message>> sendNotification(@RequestBody Message message, @PathVariable Long dogId){
+        Dog dog = dogService.findById(dogId);
         Message savedMessage = chatService.sendAlarmAndSaveMessage(message, dog.getId());
         return ResponseEntity.ok(Response.success(savedMessage));
     }
@@ -70,16 +68,15 @@ public class ChatController {
         log.info("보낸 메시지: {}", message.toString());
         log.info("dogId: {}", dogId);
         chatService.sendMessage(message, dogId);
-
     }
 
     @Operation(summary = "채팅방 나가기", description = "채팅방 나가기")
     @MessageMapping("/chatroom/leave")
-    public void leaveChatRoom(@Payload LeaveRequest leaveRequest){
+    public void leaveChatRoom(@Payload LeaveRequest leaveRequest, @Header("Authorization") String authorizationHeader){
         Long leaveChatRooomNo = leaveRequest.getChatNo();
         Long dogId = leaveRequest.getDogId();
 
-        chatRoomService.disconnectChatRoom(leaveChatRooomNo, dogId);
+        chatRoomService.disconnectChatRoom(leaveChatRooomNo, dogId, authorizationHeader);
         chatService.leaveMessage(dogId, leaveChatRooomNo);
     }
 }

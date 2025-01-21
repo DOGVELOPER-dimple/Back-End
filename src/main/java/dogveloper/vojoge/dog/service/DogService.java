@@ -5,6 +5,7 @@ import dogveloper.vojoge.dog.dto.DogDTO;
 import dogveloper.vojoge.dog.repository.DogRepository;
 import dogveloper.vojoge.social.user.User;
 import dogveloper.vojoge.social.user.UserService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -62,6 +63,6 @@ public class DogService {
 
     public Dog findById(Long id) {
         return dogRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Dog not found"));
+                .orElseThrow(() -> new EntityNotFoundException("찾을 수 없음"));
     }
 }

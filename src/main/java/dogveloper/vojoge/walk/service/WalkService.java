@@ -28,6 +28,7 @@ public class WalkService {
     public Walk createWalk(Long dogId, RequestWalkDto requestWalkDto){
         User user = userService.getAuthenticatedUser();
         Dog dog = dogService.findById(dogId);
+
         if(dog != null && dog.getUser().equals(user)) {
             Walk walk = requestWalkDto.toEntity(dog);
             return walkRepository.save(walk);
@@ -62,13 +63,11 @@ public class WalkService {
 
     public boolean deleteWalk(Long walkId){
         Walk walk = findById(walkId);
-        if(walk != null){
+        if(walk != null && dogService.validation(walk.getDog())){
             walkRepository.deleteById(walkId);
             return true;
         }else{
             return false;
         }
     }
-
-
 }

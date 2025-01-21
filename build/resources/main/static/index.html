@@ -27,20 +27,24 @@
 
 <script>
     let stompClient = null;
+    let subscription = null;
 
-    // 연결 상태 업데이트 함수
+    // 연결 상태 업데이트
     function updateConnectionStatus(status, color) {
         const statusElement = document.getElementById("connectionStatus");
         statusElement.textContent = status;
         statusElement.style.color = color;
     }
 
-    // 이전 채팅 기록 가져오기 함수
-    function fetchChatHistory(chatNo) {
-        fetch(`http://localhost:8080/chatroom/${chatNo}`, {
+    // 이전 채팅 기록 가져오기
+    function fetchChatHistory(chatNo, dogId) {
+        const token = localStorage.getItem("jwtToken");
+
+        fetch(`http://localhost:8080/chatroom/${chatNo}/${dogId}`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
             }
         })
             .then(response => {
@@ -50,12 +54,13 @@
                 return response.json();
             })
             .then(data => {
-                const chatHistory = data.result.chatList; // 서버 응답에서 chatList 추출
+                const chatHistory = data.result.chatList; // 서버 응답에서 chatList 가져옴
                 const messageList = document.getElementById("messages");
+                messageList.innerHTML = "";
 
                 chatHistory.forEach(msg => {
                     const listItem = document.createElement("li");
-                    listItem.textContent = `From Chat Room ${msg.chatNo}: ${msg.content} (Sent by ${msg.senderName || msg.senderId} at ${msg.sendTime})`;
+                    listItem.textContent = `${msg.senderName}: ${msg.content} (Sent Time: ${msg.sendDate}) Read: ${msg.read}`;
                     messageList.appendChild(listItem);
                 });
 
@@ -64,39 +69,58 @@
             .catch(error => console.error("Error fetching chat history:", error));
     }
 
-    // 서버에 연결
     document.getElementById("connect").addEventListener("click", function () {
         const socket = new SockJS('http://localhost:8080/chat');
         stompClient = Stomp.over(socket);
 
         updateConnectionStatus("Connecting...", "orange");
 
-        const chatNo = document.getElementById("chatNo").value || "2"; // 기본값 2
+        const chatNo = document.getElementById("chatNo").value || "2";
+        const dogId = document.getElementById("dogId").value;
 
-        // 이전 데이터 가져오기
-        fetchChatHistory(chatNo);
+        if (!dogId) {
+            alert("Dog ID를 입력하세요.");
+            return;
+        }
 
-        stompClient.connect({}, function (frame) {
-            console.log('Connected: ' + frame);
-            updateConnectionStatus("Connected", "green");
+        const token = localStorage.getItem("jwtToken");
+        if (!token) {
+            alert("JWT Token이 없습니다.");
+            return;
+        }
 
-            // 채팅방 구독
-            stompClient.subscribe(`/subscribe/${chatNo}`, function (message) {
-                const receivedMessage = JSON.parse(message.body);
-                const messageList = document.getElementById("messages");
-                const listItem = document.createElement("li");
-                listItem.textContent = `From Chat Room ${chatNo}: ${receivedMessage.content}`;
-                messageList.appendChild(listItem);
-            });
-        }, function (error) {
-            console.error('Connection error: ', error);
-            updateConnectionStatus("Connection Failed", "red");
-        });
+        stompClient.connect(
+            {
+                "Authorization": `Bearer ${localStorage.getItem("jwtToken")}`,
+                "dogId": document.getElementById("dogId").value,
+                "chatRoomNo": document.getElementById("chatNo").value || "2"
+            },
+            function (frame) {
+                console.log('Connected: ' + frame);
+                updateConnectionStatus("Connected", "green");
+
+                subscription = stompClient.subscribe(`/subscribe/${chatNo}`, function (message) {
+                    const receivedMessage = JSON.parse(message.body);
+                    const messageList = document.getElementById("messages");
+                    const listItem = document.createElement("li");
+                    listItem.textContent = `${receivedMessage.senderName}: ${receivedMessage.content}`;
+                    messageList.appendChild(listItem);
+                });
+            },
+            function (error) {
+                console.error('Connection error: ', error);
+                updateConnectionStatus("Connection Failed", "red");
+            }
+        );
     });
 
     // 서버에서 연결 종료
     document.getElementById("disconnect").addEventListener("click", function () {
         if (stompClient !== null) {
+            if (subscription) {
+                subscription.unsubscribe();
+                subscription = null;
+            }
             stompClient.disconnect();
             console.log("Disconnected");
             updateConnectionStatus("Disconnected", "red");
@@ -105,26 +129,36 @@
 
     // 메시지 전송
     document.getElementById("send").addEventListener("click", function () {
-        const chatNo = document.getElementById("chatNo").value || "2"; // 기본값 2
+        const chatNo = document.getElementById("chatNo").value || "2";
         const messageContent = document.getElementById("message").value || "Hello, World!";
         const dogId = document.getElementById("dogId").value;
 
         if (!dogId) {
-            alert("Please enter a valid Dog ID to send a message.");
+            alert("Dog ID를 입력하세요.");
+            return;
+        }
+
+        const token = localStorage.getItem("jwtToken");
+        if (!token) {
+            alert("JWT Token이 없습니다.");
             return;
         }
 
         const message = {
             chatNo: chatNo,
             content: messageContent,
-            senderId: dogId, // 메시지 발신자
-            sendTime: new Date().toISOString() // 현재 시간 추가
+            senderId: dogId,
+            sendTime: new Date().toISOString()
         };
 
         if (stompClient && stompClient.connected) {
             stompClient.send(
                 '/publish/message',
-                { "dogId": dogId, "chatRoomNo": chatNo }, // 헤더에 dogId와 chatRoomNo 포함
+                {
+                    "Authorization": `Bearer ${token}`,
+                    "dogId": dogId,
+                    "chatRoomNo": chatNo
+                },
                 JSON.stringify(message)
             );
             console.log('Message sent: ', message);
