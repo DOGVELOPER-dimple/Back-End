@@ -1,5 +1,6 @@
 package dogveloper.vojoge.walk.controller;
 
+import dogveloper.vojoge.dog.domain.Dog;
 import dogveloper.vojoge.location.service.LocationService;
 import dogveloper.vojoge.walk.domain.Walk;
 import dogveloper.vojoge.walk.dto.request.RequestWalkDto;

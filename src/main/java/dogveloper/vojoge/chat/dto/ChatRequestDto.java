@@ -8,5 +8,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChatRequestDto {
+    private Long seletedDogId;
     private Long joinDogId;
 }

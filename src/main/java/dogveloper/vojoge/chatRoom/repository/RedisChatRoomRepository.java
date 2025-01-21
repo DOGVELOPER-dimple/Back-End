@@ -11,4 +11,5 @@ public interface RedisChatRoomRepository extends CrudRepository<ChatRoom, String
     List<ChatRoom> findByChatroomNo(Long chatRoomNo);
 
     Optional<ChatRoom> findByChatroomNoAndDogId(Long chatRoomNo, Long DogId);
+
 }
