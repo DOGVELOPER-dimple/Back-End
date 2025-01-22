@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -16,6 +17,7 @@ public class NotificationService {
 
     public Notification saveNotification(NotificationRequest request) {
         Notification notification = Notification.builder()
+                .userId(request.getUserId())
                 .dogId(request.getDogId())
                 .message(request.getMessage())
                 .scheduledTime(request.getScheduledTime())
@@ -23,14 +25,17 @@ public class NotificationService {
                 .build();
         return notificationRepository.save(notification);
     }
-    public List<Notification> getNotifications(Long dogId) {
-        return notificationRepository.findAllByDogId(dogId);
+    public List<Notification> getNotifications(Long userId) {
+        return notificationRepository.findAllByUserId(userId);
+    }
+    public List<Notification> getNotificationsByDog(Long userId, Long dogId){
+        return notificationRepository.findAllByUserIdAndDogId(userId, dogId);
     }
     public Notification updateNotification(Long notificationId, NotificationRequest request){
         return notificationRepository.findById(notificationId).map(notification -> {
-            notification.setMessage(request.getMessage());
-            notification.setScheduledTime(request.getScheduledTime());
-            notification.setSent(request.isSent());
+            Optional.ofNullable(request.getMessage()).ifPresent(notification::setMessage);
+            Optional.ofNullable(request.getScheduledTime()).ifPresent(notification::setScheduledTime);
+            Optional.ofNullable(request.isSent()).ifPresent(notification::setSent);
             return notificationRepository.save(notification);
         }).orElse(null);
     }

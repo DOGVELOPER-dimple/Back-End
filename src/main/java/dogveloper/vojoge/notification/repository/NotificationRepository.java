@@ -8,6 +8,6 @@ import java.util.List;
 
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
     List<Notification> findByScheduledTimeBeforeAndSent(LocalDateTime now, boolean sent);
-
-    List<Notification> findAllByDogId(Long dogId);
+    List<Notification>findAllByUserId(Long userId);
+    List<Notification>findAllByUserIdAndDogId(Long userId, Long dogId);
 }
