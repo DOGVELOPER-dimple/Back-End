@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -24,7 +25,8 @@ public class NotificationController {
     @Operation(summary = "알림 생성 //준상", description = "새로운 알림을 생성합니다.")
     @PostMapping
     public ResponseEntity<String> createNotification(@RequestBody NotificationRequest request) {
-        notificationService.saveNotification(request);
+        Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        notificationService.saveNotification(request, userId);
         return ResponseEntity.ok("Notification scheduled successfully");
     }
 

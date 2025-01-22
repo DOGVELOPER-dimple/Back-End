@@ -15,9 +15,9 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
 
-    public Notification saveNotification(NotificationRequest request) {
+    public Notification saveNotification(NotificationRequest request, Long userId) {
         Notification notification = Notification.builder()
-                .userId(request.getUserId())
+                .userId(userId)
                 .dogId(request.getDogId())
                 .message(request.getMessage())
                 .scheduledTime(request.getScheduledTime())
