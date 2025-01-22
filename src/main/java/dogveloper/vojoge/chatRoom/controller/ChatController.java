@@ -1,6 +1,5 @@
 package dogveloper.vojoge.chatRoom.controller;
 
-import dogveloper.vojoge.chat.domain.Chat;
 import dogveloper.vojoge.chat.dto.ChatRequestDto;
 import dogveloper.vojoge.chat.dto.ChattingHistoryResponseDto;
 import dogveloper.vojoge.chat.dto.LeaveRequest;
@@ -11,7 +10,6 @@ import dogveloper.vojoge.chatRoom.dto.Response;
 import dogveloper.vojoge.chatRoom.service.ChatRoomService;
 import dogveloper.vojoge.dog.domain.Dog;
 import dogveloper.vojoge.dog.service.DogService;
-import dogveloper.vojoge.social.user.User;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +36,7 @@ public class ChatController {
         return ResponseEntity.ok(Response.success(chatRoomService.makeChatRoom(requestDto)));
     }
 
-    @Operation(summary = "나의 채팀룸", description = "채팅룸")
+    @Operation(summary = "나의 채팅룸", description = "채팅룸")
     @GetMapping("/my-chatroom/{dogId}")
     public ResponseEntity<Response<List<MyChatRoomResponse>>> chatRoomList(@PathVariable Long dogId){
         List<MyChatRoomResponse> chatRoomList = chatRoomService.getChatRoomList(dogId);
