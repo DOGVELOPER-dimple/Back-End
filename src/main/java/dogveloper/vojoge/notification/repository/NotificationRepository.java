@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
-    List<Notification> findAllByDogIdAndScheduledTimeAfter(Long dogId, LocalDateTime now);
-
     List<Notification> findByScheduledTimeBeforeAndSent(LocalDateTime now, boolean sent);
+
+    List<Notification> findAllByDogId(Long dogId);
 }

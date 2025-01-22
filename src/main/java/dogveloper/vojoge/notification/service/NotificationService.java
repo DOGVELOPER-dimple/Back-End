@@ -6,7 +6,6 @@ import dogveloper.vojoge.notification.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -24,16 +23,17 @@ public class NotificationService {
                 .build();
         return notificationRepository.save(notification);
     }
-
-    public boolean isOwnerOfDog(String userId, Long dogId) {
-        // 특정 userId가 dogId의 소유자인지 확인하는 로직 구현
-        return true; // 로직 추가 필요
-    }
-
     public List<Notification> getNotifications(Long dogId) {
-        return notificationRepository.findAllByDogIdAndScheduledTimeAfter(dogId, LocalDateTime.now());
+        return notificationRepository.findAllByDogId(dogId);
     }
-
+    public Notification updateNotification(Long notificationId, NotificationRequest request){
+        return notificationRepository.findById(notificationId).map(notification -> {
+            notification.setMessage(request.getMessage());
+            notification.setScheduledTime(request.getScheduledTime());
+            notification.setSent(request.isSent());
+            return notificationRepository.save(notification);
+        }).orElse(null);
+    }
     public void deleteNotification(Long notificationId) {
         notificationRepository.deleteById(notificationId);
     }

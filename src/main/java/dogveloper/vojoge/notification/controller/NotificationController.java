@@ -60,6 +60,20 @@ public class NotificationController {
         return ResponseEntity.ok(notifications);
     }
 
+    @Operation(summary = "알림 수정 //준상", description = "기존 알림을 수정합니다.")
+    @PutMapping("/{notificationId}")
+    public ResponseEntity<Notification> updateNotification(
+            @PathVariable Long notificationId,
+            @RequestBody NotificationRequest request){
+
+        Notification updatedNotification = notificationService.updateNotification(notificationId, request);
+        if (updatedNotification != null){
+            return ResponseEntity.ok(updatedNotification);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @Operation(summary = "알림 삭제 //준상", description = "특정 알림 ID를 삭제합니다.")
     @DeleteMapping("/{notificationId}")
     public ResponseEntity<String> deleteNotification(@PathVariable Long notificationId) {
