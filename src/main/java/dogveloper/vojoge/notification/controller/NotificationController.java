@@ -53,12 +53,22 @@ public class NotificationController {
         }
     }
 
-    @Operation(summary = "알림 목록 조회 //준상", description = "특정 반려견 ID로 저장된 알림 목록을 조회합니다.")
-    @GetMapping("/{dogId}")
-    public ResponseEntity<List<Notification>> getNotifications(@PathVariable Long dogId) {
-        List<Notification> notifications = notificationService.getNotifications(dogId);
+    @Operation(summary = "유저의 모든 알림 조회 //준상", description = "유저 ID로 모든 알림을 조회합니다.")
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<Notification>> getNotificationsByUser(@PathVariable Long userId){
+        List<Notification> notifications = notificationService.getNotifications(userId);
         return ResponseEntity.ok(notifications);
     }
+
+    @Operation(summary = "강아지의 알림 조회 //준상", description = "유저 ID와 강아지 ID로 알림을 조회합니다.")
+    @GetMapping("/user/{userId}/dog/{dogId}")
+    public ResponseEntity<List<Notification>> getNotificationsByDog(
+            @PathVariable Long userId,
+            @PathVariable Long dogId){
+        List<Notification> notifications = notificationService.getNotificationsByDog(userId, dogId);
+        return ResponseEntity.ok(notifications);
+    }
+
 
     @Operation(summary = "알림 수정 //준상", description = "기존 알림을 수정합니다.")
     @PutMapping("/{notificationId}")
