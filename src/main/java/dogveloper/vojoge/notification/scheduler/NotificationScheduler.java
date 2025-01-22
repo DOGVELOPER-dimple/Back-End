@@ -26,7 +26,7 @@ public class NotificationScheduler {
         notifications.forEach(notification -> {
             log.info("Sending notification to dog ID {}: {}", notification.getDogId(), notification.getMessage());
             notificationController.notifySubscribers(notification);
-            notification.setSent(true); // 알림 전송 완료
+            notification.setSent(true);
             notificationRepository.save(notification);
         });
     }
