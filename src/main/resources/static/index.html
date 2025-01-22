@@ -14,7 +14,7 @@
     <button id="disconnect">Disconnect</button>
 </div>
 <div>
-    <input id="chatNo" placeholder="Chat Room No (Default: 2)" />
+    <input id="chatNo" placeholder="" />
     <input id="message" placeholder="Message" />
     <input id="dogId" placeholder="Dog ID (Required for Sending Messages)" />
     <button id="send">Send Message</button>
@@ -40,7 +40,7 @@
     function fetchChatHistory(chatNo, dogId) {
         const token = localStorage.getItem("jwtToken");
 
-        fetch(`http://localhost:8080/chatroom/${chatNo}/${dogId}`, {
+        fetch(`https://localhost:8080/chatroom/${chatNo}/${dogId}`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -54,7 +54,7 @@
                 return response.json();
             })
             .then(data => {
-                const chatHistory = data.result.chatList; // 서버 응답에서 chatList 가져옴
+                const chatHistory = data.result.chatList;
                 const messageList = document.getElementById("messages");
                 messageList.innerHTML = "";
 
@@ -70,13 +70,20 @@
     }
 
     document.getElementById("connect").addEventListener("click", function () {
-        const socket = new SockJS('http://localhost:8080/chat');
+        const socket = new SockJS('https://localhost:8080/chat');
         stompClient = Stomp.over(socket);
 
         updateConnectionStatus("Connecting...", "orange");
 
-        const chatNo = document.getElementById("chatNo").value || "2";
-        const dogId = document.getElementById("dogId").value;
+        const chatNoElement = document.getElementById("chatNo");
+        const chatNo = chatNoElement.value.trim();
+        const dogId = document.getElementById("dogId").value.trim();
+        console.log(chatNoElement + " " + chatNo + " " + dogId);
+
+        if (!chatNo || isNaN(chatNo) || parseInt(chatNo) <= 0) {
+            alert("유효한 채팅방 번호를 입력하세요.");
+            return;
+        }
 
         if (!dogId) {
             alert("Dog ID를 입력하세요.");
@@ -92,46 +99,74 @@
         stompClient.connect(
             {
                 "Authorization": `Bearer ${localStorage.getItem("jwtToken")}`,
-                "dogId": document.getElementById("dogId").value,
-                "chatRoomNo": document.getElementById("chatNo").value || "2"
+                "dogId": dogId,
+                "chatRoomNo": chatNo
             },
             function (frame) {
                 console.log('Connected: ' + frame);
                 updateConnectionStatus("Connected", "green");
-
                 subscription = stompClient.subscribe(`/subscribe/${chatNo}`, function (message) {
                     const receivedMessage = JSON.parse(message.body);
                     const messageList = document.getElementById("messages");
                     const listItem = document.createElement("li");
                     listItem.textContent = `${receivedMessage.senderName}: ${receivedMessage.content}`;
                     messageList.appendChild(listItem);
+                }, {
+                    "Authorization": `Bearer ${localStorage.getItem("jwtToken")}`,
+                    "dogId": dogId,
+                    "chatRoomNo": chatNo
                 });
+                fetchChatHistory(chatNo, dogId);
             },
             function (error) {
-                console.error('Connection error: ', error);
-                updateConnectionStatus("Connection Failed", "red");
             }
         );
     });
 
     // 서버에서 연결 종료
     document.getElementById("disconnect").addEventListener("click", function () {
-        if (stompClient !== null) {
-            if (subscription) {
-                subscription.unsubscribe();
-                subscription = null;
+        if (stompClient && stompClient.connected) {
+            const chatNo = document.getElementById("chatNo").value.trim();
+            const dogId = document.getElementById("dogId").value.trim();
+            const token = localStorage.getItem("jwtToken");
+
+            if (!chatNo || !dogId || !token) {
+                console.error("JWT 토큰, Dog ID, 또는 채팅방 번호가 없습니다.");
+                alert("모든 필드를 입력하세요.");
+                return;
             }
-            stompClient.disconnect();
-            console.log("Disconnected");
-            updateConnectionStatus("Disconnected", "red");
+
+            const leaveRequest = {
+                chatNo: parseInt(chatNo, 10),
+                dogId: parseInt(dogId, 10),
+            };
+
+            stompClient.send(
+                "/publish/chatroom/leave",
+                {
+                    "Authorization": `Bearer ${token}`,
+                },
+                JSON.stringify(leaveRequest)
+            );
+
+        } else {
+            console.error("WebSocket 연결이 활성화되어 있지 않습니다.");
+            alert("이미 연결이 해제되었습니다.");
         }
     });
 
+
     // 메시지 전송
     document.getElementById("send").addEventListener("click", function () {
-        const chatNo = document.getElementById("chatNo").value || "2";
-        const messageContent = document.getElementById("message").value || "Hello, World!";
+        const chatNoElement = document.getElementById("chatNo");
+        const chatNo = chatNoElement.value.trim();
+        const messageContent = document.getElementById("message").value || " ";
         const dogId = document.getElementById("dogId").value;
+
+        if(!chatNo){
+            alert("방 번호가 있어야 합니다.");
+            return;
+        }
 
         if (!dogId) {
             alert("Dog ID를 입력하세요.");
@@ -165,6 +200,7 @@
         } else {
             console.log("You need to connect first!");
         }
+        fetchChatHistory(chatNo, dogId);
     });
 </script>
 </body>
