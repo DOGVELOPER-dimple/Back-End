@@ -36,7 +36,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         String token = jwtTokenProvider.createToken(email);
 
 
-        String redirectUrl = "http://localhost:8080/auth/success?token=" + token;
+        String redirectUrl = "https://vojoge.site/auth/success?token=" + token;
         response.sendRedirect(redirectUrl);
     }
 
