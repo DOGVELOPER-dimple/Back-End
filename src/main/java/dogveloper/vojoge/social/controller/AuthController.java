@@ -23,14 +23,14 @@ public class AuthController {
     @GetMapping("/login/google")
     @Operation(summary = "구글 로그인 //준상")
     public void googleLoginRedirect(HttpServletResponse response) {
-        response.sendRedirect("http://localhost:8080/oauth2/authorization/google");
+        response.sendRedirect("https://vojoge.site/oauth2/authorization/google");
     }
 
     @SneakyThrows
     @GetMapping("/login/kakao")
     @Operation(summary = "카카오 로그인 //준상")
     public void kakaoLoginRedirect(HttpServletResponse response) {
-        response.sendRedirect("http://localhost:8080/oauth2/authorization/kakao");
+        response.sendRedirect("https://vojoge.site/oauth2/authorization/kakao");
     }
 
     @GetMapping("/protected")
@@ -64,22 +64,6 @@ public class AuthController {
 
         return ResponseEntity.ok(userInfo);
     }
-
-    /*@GetMapping("/success")
-    @Operation(summary = "이메일 기반 Redis에서 토큰 조회")
-    public ResponseEntity<Map<String, String>> getTokenByEmail(@RequestParam("email") String email) {
-        // 이메일 기반으로 Redis에서 토큰 조회
-        String token = jwtStorageService.getTokenByEmail(email);
-
-        if (token == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", "해당 이메일로 저장된 토큰이 없습니다."));
-        }
-
-        return ResponseEntity.ok(Map.of(
-                "token", token
-        ));
-    }*/
     @GetMapping("/success")
     public ResponseEntity<Map<String, String>> authSuccess(@RequestParam String token) {
         return ResponseEntity.ok(Map.of("message", "로그인 성공", "token", token));

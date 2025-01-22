@@ -45,8 +45,9 @@ public class SecurityConfig {
                         "http://localhost:8080",
                         "http://10.0.2.2:8080",
                         "https://f7e4-1-242-93-85.ngrok-free.app",
-                        "http://3.38.209.147:8080",
-                        "http://3.38.209.147"
+                        "http://43.200.178.199:8080",
+                        "http://43.200.178.199",
+                        "https://vojoge.site"
                 ));
                 config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
                 config.setAllowedHeaders(List.of("*"));
