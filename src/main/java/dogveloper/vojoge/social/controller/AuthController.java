@@ -65,6 +65,7 @@ public class AuthController {
         return ResponseEntity.ok(userInfo);
     }
     @GetMapping("/success")
+    @Operation(summary = "json응답으로 토큰 //준상", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Map<String, String>> authSuccess(@RequestParam String token) {
         return ResponseEntity.ok(Map.of("message", "로그인 성공", "token", token));
     }

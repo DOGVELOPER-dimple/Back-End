@@ -99,7 +99,7 @@ public class SecurityConfig {
                 .contentSecurityPolicy(csp -> csp
                         .policyDirectives("default-src 'self'; " +
                                 "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
-                                "connect-src 'self' ws://localhost:8080; " +
+                                "connect-src 'self' wss://vojoge.site; " +
                                 "style-src 'self' 'unsafe-inline'; " +
                                 "font-src 'self' https://fonts.gstatic.com; " +
                                 "img-src 'self';")));

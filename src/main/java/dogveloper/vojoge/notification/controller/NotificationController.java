@@ -3,12 +3,13 @@ package dogveloper.vojoge.notification.controller;
 import dogveloper.vojoge.notification.domain.Notification;
 import dogveloper.vojoge.notification.dto.NotificationRequest;
 import dogveloper.vojoge.notification.service.NotificationService;
+import dogveloper.vojoge.social.user.User;
+import dogveloper.vojoge.social.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -22,13 +23,14 @@ import java.util.concurrent.ConcurrentHashMap;
 public class NotificationController {
 
     private final NotificationService notificationService;
+    private final UserService userService;
     private final ConcurrentHashMap<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
 
     @Operation(summary = "알림 생성 //준상", description = "새로운 알림을 생성합니다.", security = @SecurityRequirement(name = "bearer Auth"))
     @PostMapping
     public ResponseEntity<String> createNotification(@RequestBody NotificationRequest request) {
-        Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        notificationService.saveNotification(request, userId);
+        User user = userService.getAuthenticatedUser();
+        notificationService.saveNotification(request, user.getId());
         return ResponseEntity.ok("Notification scheduled successfully");
     }
 
