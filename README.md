@@ -3,7 +3,7 @@
 ## ⚙️🛠️ Technical Stack
 
 ### Backend
-<img src="https://skillicons.dev/icons?i=java,spring,hibernate,gradle,postman,aws& perline="/>
+<img src="https://skillicons.dev/icons?i=java,spring,hibernate,gradle,postman& perline="/>
 
 
 ### DB
@@ -11,4 +11,4 @@
 
 
 ### DevOps
-<img src="https://skillicons.dev/icons?i=docker,rds,ec2,loadbalance,s3& perline="/>
+<img src="https://skillicons.dev/icons?i=docker,aws,rds,ec2,loadbalance,s3& perline="/>
