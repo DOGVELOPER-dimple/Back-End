@@ -3,7 +3,7 @@
 ## ⚙️🛠️ Technical Stack
 
 ### Backend
-<img src="https://skillicons.dev/icons?i=java,spring,springsecurity,hibernate,gradle,postman,& perline="/>
+<img src="https://skillicons.dev/icons?i=java,spring,hibernate,gradle,postman,aws& perline="/>
 
 
 ### DB
