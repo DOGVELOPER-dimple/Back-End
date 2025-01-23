@@ -1,5 +1,3 @@
 # Vojoge_Backend
-<hr>
-Technical Stack
-<hr>
-Backend
+##Technical Stack
+###Backend
