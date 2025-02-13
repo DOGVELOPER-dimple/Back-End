@@ -40,7 +40,7 @@
     function fetchChatHistory(chatNo, dogId) {
         const token = localStorage.getItem("jwtToken");
 
-        fetch(`https://localhost:8080/chatroom/${chatNo}/${dogId}`, {
+        fetch(`https://vojoge.site/chatroom/${chatNo}/${dogId}`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -70,7 +70,7 @@
     }
 
     document.getElementById("connect").addEventListener("click", function () {
-        const socket = new SockJS('https://localhost:8080/chat');
+        const socket = new SockJS('https://vojoge.site/chat');
         stompClient = Stomp.over(socket);
 
         updateConnectionStatus("Connecting...", "orange");
