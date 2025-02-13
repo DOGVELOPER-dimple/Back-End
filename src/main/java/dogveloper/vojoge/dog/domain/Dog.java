@@ -43,11 +43,20 @@ public class Dog {
     private String registrationNumber;
     private String image;
 
-    // ✅ 추가 필드
+    // ✅ 추가 필드 (nullable 명시적 설정)
+    @Column(nullable = true)
     private LocalDate recentCheckupDate; // 최근 검진 일자
+
+    @Column(nullable = true)
     private LocalDate heartwormVaccinationDate; // 심장사상충 접종일
+
+    @Column(nullable = true)
     private LocalDate menstruationStartDate; // 생리 시작일
+
+    @Column(nullable = true)
     private Integer menstruationDuration; // 생리 지속일
+
+    @Column(nullable = true)
     private Integer menstruationCycle; // 생리 주기
 
     @Builder

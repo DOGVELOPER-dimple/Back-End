@@ -6,11 +6,13 @@ import dogveloper.vojoge.dog.repository.DogRepository;
 import dogveloper.vojoge.social.user.User;
 import dogveloper.vojoge.social.user.UserService;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Transactional
 @Service
 @RequiredArgsConstructor
 public class DogService {
@@ -58,6 +60,7 @@ public class DogService {
 
     public Dog findById(Long id) {
         return dogRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("반려견 정보를 찾을 수 없습니다."));
+                .orElseThrow(()
+                        -> new EntityNotFoundException("반려견 정보를 찾을 수 없습니다."));
     }
 }
