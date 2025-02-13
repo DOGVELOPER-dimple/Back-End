@@ -59,23 +59,11 @@ public class JwtStorageService {
             return null;
         }
     }
-    public String getTokenByEmail(String email) {
-        try {
-            return redisTemplate.opsForValue().get(email); // 이메일 → 토큰 조회
-        } catch (Exception e) {
-            System.err.println("Redis 조회 실패: " + e.getMessage());
-            return null;
-        }
-    }
-
-
     public boolean deleteToken(String token) {
         try {
             if (redisTemplate == null) {
                 throw new IllegalStateException("RedisTemplate is not initialized.");
             }
-
-            // Redis에서 키 삭제
             redisTemplate.delete(token);
             System.out.println("Token deleted: " + token);
             return true;

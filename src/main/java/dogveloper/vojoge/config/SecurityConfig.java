@@ -3,8 +3,6 @@ package dogveloper.vojoge.config;
 import dogveloper.vojoge.jwt.JwtAuthenticationFilter;
 import dogveloper.vojoge.social.handler.OAuth2LoginSuccessHandler;
 import dogveloper.vojoge.social.service.CustomOAuth2UserService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -19,9 +17,6 @@ import java.util.List;
 
 @Configuration
 public class SecurityConfig {
-
-    private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
-
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -44,7 +39,6 @@ public class SecurityConfig {
                         "http://localhost:3000",
                         "http://localhost:8080",
                         "http://10.0.2.2:8080",
-                        "https://f7e4-1-242-93-85.ngrok-free.app",
                         "http://43.200.178.199:8080",
                         "http://43.200.178.199",
                         "https://vojoge.site"

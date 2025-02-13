@@ -6,11 +6,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.LocalDate;
+import java.util.Objects;
+
 @Data
 public class DogDTO {
     @Schema(hidden = true) // Swagger 문서에서 숨김 처리
     private Long id;
-
     private String name;
     private int age;
     private double weight;
@@ -22,10 +24,19 @@ public class DogDTO {
     private String registrationNumber;
     private String image;
 
+    // ✅ 추가 필드
+    private LocalDate recentCheckupDate;
+    private LocalDate heartwormVaccinationDate;
+    private LocalDate menstruationStartDate;
+    private Integer menstruationDuration;
+    private Integer menstruationCycle;
+
     @Builder
-    public DogDTO(Long id, String name, int age, double weight, String gender, String puppySpecies, double height,
-                  double legLength, String bloodType, String registrationNumber, String image) {
-        this.id = id; // id 필드 초기화
+    public DogDTO(Long id, String name, int age, double weight, String gender, String puppySpecies,
+                  double height, double legLength, String bloodType, String registrationNumber, String image,
+                  LocalDate recentCheckupDate, LocalDate heartwormVaccinationDate,
+                  LocalDate menstruationStartDate, Integer menstruationDuration, Integer menstruationCycle) {
+        this.id = id;
         this.name = name;
         this.age = age;
         this.weight = weight;
@@ -36,6 +47,11 @@ public class DogDTO {
         this.bloodType = bloodType;
         this.registrationNumber = registrationNumber;
         this.image = image;
+        this.recentCheckupDate = recentCheckupDate;
+        this.heartwormVaccinationDate = heartwormVaccinationDate;
+        this.menstruationStartDate = menstruationStartDate;
+        this.menstruationDuration = menstruationDuration;
+        this.menstruationCycle = menstruationCycle;
     }
 
     public Dog toEntity(User user) {
@@ -51,12 +67,17 @@ public class DogDTO {
                 .bloodType(this.bloodType)
                 .registrationNumber(this.registrationNumber)
                 .image(this.image)
+                .recentCheckupDate(this.recentCheckupDate)
+                .heartwormVaccinationDate(this.heartwormVaccinationDate)
+                .menstruationStartDate(this.menstruationStartDate)
+                .menstruationDuration(this.menstruationDuration)
+                .menstruationCycle(this.menstruationCycle)
                 .build();
     }
 
     public static DogDTO fromEntity(Dog dog) {
         return DogDTO.builder()
-                .id(dog.getId()) // id 추가
+                .id(dog.getId())
                 .name(dog.getName())
                 .age(dog.getAge())
                 .weight(dog.getWeight())
@@ -67,6 +88,30 @@ public class DogDTO {
                 .bloodType(dog.getBloodType())
                 .registrationNumber(dog.getRegistrationNumber())
                 .image(dog.getImage())
+                .recentCheckupDate(dog.getRecentCheckupDate())
+                .heartwormVaccinationDate(dog.getHeartwormVaccinationDate())
+                .menstruationStartDate(dog.getMenstruationStartDate())
+                .menstruationDuration(dog.getMenstruationDuration())
+                .menstruationCycle(dog.getMenstruationCycle())
                 .build();
+    }
+
+    // ✅ 엔티티 업데이트 메서드 추가
+    public void updateEntity(Dog dog) {
+        if (Objects.nonNull(this.name)) dog.setName(this.name);
+        if (this.age > 0) dog.setAge(this.age);
+        if (this.weight > 0) dog.setWeight(this.weight);
+        if (Objects.nonNull(this.gender)) dog.setGender(this.gender);
+        if (Objects.nonNull(this.puppySpecies)) dog.setPuppySpecies(this.puppySpecies);
+        if (this.height > 0) dog.setHeight(this.height);
+        if (this.legLength > 0) dog.setLegLength(this.legLength);
+        if (Objects.nonNull(this.bloodType)) dog.setBloodType(this.bloodType);
+        if (Objects.nonNull(this.registrationNumber)) dog.setRegistrationNumber(this.registrationNumber);
+        if (Objects.nonNull(this.image)) dog.setImage(this.image);
+        if (Objects.nonNull(this.recentCheckupDate)) dog.setRecentCheckupDate(this.recentCheckupDate);
+        if (Objects.nonNull(this.heartwormVaccinationDate)) dog.setHeartwormVaccinationDate(this.heartwormVaccinationDate);
+        if (Objects.nonNull(this.menstruationStartDate)) dog.setMenstruationStartDate(this.menstruationStartDate);
+        if (Objects.nonNull(this.menstruationDuration)) dog.setMenstruationDuration(this.menstruationDuration);
+        if (Objects.nonNull(this.menstruationCycle)) dog.setMenstruationCycle(this.menstruationCycle);
     }
 }

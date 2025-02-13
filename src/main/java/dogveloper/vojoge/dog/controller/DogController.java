@@ -16,7 +16,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/dogs")
-@SecurityRequirement(name = "bearerAuth") // 모든 메소드에 기본으로 JWT 인증 적용
+@SecurityRequirement(name = "bearerAuth")
 public class DogController {
     private final DogService dogService;
     private final UserService userService;
