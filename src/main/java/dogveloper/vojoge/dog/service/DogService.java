@@ -18,35 +18,29 @@ public class DogService {
     private final UserService userService;
 
     public Dog saveDog(User user, DogDTO dogDTO) {
-        Dog dog = dogDTO.toEntity(user);
-        return dogRepository.save(dog);
+        return dogRepository.save(dogDTO.toEntity(user));
     }
 
     public List<Dog> findByUser(User user) {
         return dogRepository.findByUserId(user.getId());
     }
 
-    public boolean validation(Dog dog){
+    // ✅ validation 메서드 이름 유지
+    public boolean validation(Dog dog) {
         User user = userService.getAuthenticatedUser();
         return dog.getUser().equals(user);
     }
+
     public Dog updateDog(User user, Long id, DogDTO dogDTO) {
         Dog existingDog = findById(id);
 
-        if (!existingDog.getUser().getId().equals(user.getId())) {
+        // ✅ 기존 validation() 활용
+        if (!validation(existingDog)) {
             throw new IllegalArgumentException("Unauthorized to update this dog");
         }
 
-        if (dogDTO.getName() != null) existingDog.setName(dogDTO.getName());
-        if (dogDTO.getAge() > 0) existingDog.setAge(dogDTO.getAge());
-        if (dogDTO.getWeight() > 0) existingDog.setWeight(dogDTO.getWeight());
-        if (dogDTO.getGender() != null) existingDog.setGender(dogDTO.getGender());
-        if (dogDTO.getPuppySpecies() != null) existingDog.setPuppySpecies(dogDTO.getPuppySpecies());
-        if (dogDTO.getHeight() > 0) existingDog.setHeight(dogDTO.getHeight());
-        if (dogDTO.getLegLength() > 0) existingDog.setLegLength(dogDTO.getLegLength());
-        if (dogDTO.getBloodType() != null) existingDog.setBloodType(dogDTO.getBloodType());
-        if (dogDTO.getRegistrationNumber() != null) existingDog.setRegistrationNumber(dogDTO.getRegistrationNumber());
-        if (dogDTO.getImage() != null) existingDog.setImage(dogDTO.getImage());
+        // ✅ DTO에서 엔티티 업데이트 수행
+        dogDTO.updateEntity(existingDog);
 
         return dogRepository.save(existingDog);
     }
@@ -54,15 +48,16 @@ public class DogService {
     public void deleteDog(User user, Long id) {
         Dog existingDog = findById(id);
 
-        if (!existingDog.getUser().getId().equals(user.getId())) {
+        // ✅ 기존 validation() 활용
+        if (!validation(existingDog)) {
             throw new IllegalArgumentException("Unauthorized to delete this dog");
         }
 
-        dogRepository.deleteById(id);
+        dogRepository.delete(existingDog);
     }
 
     public Dog findById(Long id) {
         return dogRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("찾을 수 없음"));
+                .orElseThrow(() -> new EntityNotFoundException("반려견 정보를 찾을 수 없습니다."));
     }
 }
