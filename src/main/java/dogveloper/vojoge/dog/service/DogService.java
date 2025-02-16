@@ -9,7 +9,12 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 @Service
@@ -18,8 +23,15 @@ public class DogService {
     private final DogRepository dogRepository;
     private final UserService userService;
 
+    private static final String IMAGE_UPLOAD_DIR = "dogveloper/vojoge/uploads/";
+
+    private static final String DEFAULT_PROFILE_IMAGE =  "/images/basephoto.png";
+
     @Transactional
     public Dog saveDog(User user, DogDTO dogDTO) {
+        if (dogDTO.getImage() == null || dogDTO.getImage().isEmpty()) {
+            dogDTO.setImage(DEFAULT_PROFILE_IMAGE);
+        }
         return dogRepository.save(dogDTO.toEntity(user));
     }
 
@@ -35,12 +47,17 @@ public class DogService {
     public Dog updateDog(User user, Long id, DogDTO dogDTO) {
         Dog existingDog = findById(id);
 
-        if (!validation(existingDog)) {
+        if (!existingDog.getUser().getId().equals(user.getId())) {
             throw new IllegalArgumentException("Unauthorized to update this dog");
         }
 
         dogDTO.updateEntity(existingDog);
-        return existingDog; // JPA 영속성 컨텍스트에 의해 자동 저장됨 (save 불필요)
+
+        if (existingDog.getImage() == null || existingDog.getImage().isEmpty()) {
+            existingDog.setImage(DEFAULT_PROFILE_IMAGE);
+        }
+
+        return existingDog;
     }
 
     public void deleteDog(User user, Long id) {
@@ -51,6 +68,49 @@ public class DogService {
         }
 
         dogRepository.delete(existingDog);
+    }
+    @Transactional
+    public String uploadDogImage(Long dogId, MultipartFile file) throws IOException {
+        Dog dog = findById(dogId);
+
+        Files.createDirectories(Paths.get(IMAGE_UPLOAD_DIR));
+
+        String fileName = "dog_" + dogId + ".png";
+        Path filePath = Paths.get(IMAGE_UPLOAD_DIR + fileName);
+
+        file.transferTo(filePath.toFile());
+
+        String imageUrl = "/uploads/" + fileName;
+        dog.setImage(imageUrl);
+
+        return imageUrl;
+    }
+
+    @Transactional
+    public Dog updateDogImage(User user, Long id, String imageUrl) {
+        Dog existingDog = findById(id);
+
+        if (!existingDog.getUser().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("Unauthorized to update this dog");
+        }
+
+        existingDog.setImage(imageUrl);
+        return existingDog;
+    }
+
+    @Transactional
+    public void deleteDogImage(Long dogId) {
+        Dog dog = findById(dogId);
+
+        if (dog.getImage() != null && !dog.getImage().equals(DEFAULT_PROFILE_IMAGE)) {
+            Path filePath = Paths.get(IMAGE_UPLOAD_DIR + dog.getImage().replace("/uploads/", ""));
+            try {
+                Files.deleteIfExists(filePath);
+            } catch (IOException e) {
+                throw new RuntimeException("이미지 삭제 중 오류 발생", e);
+            }
+        }
+        dog.setImage(DEFAULT_PROFILE_IMAGE);
     }
 
     public Dog findById(Long id) {

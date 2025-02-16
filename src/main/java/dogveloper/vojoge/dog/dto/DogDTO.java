@@ -11,7 +11,7 @@ import java.util.Objects;
 
 @Data
 public class DogDTO {
-    @Schema(hidden = true) // Swagger 문서에서 숨김 처리
+    @Schema(hidden = true)
     private Long id;
     private String name;
     private int age;
@@ -66,7 +66,7 @@ public class DogDTO {
                 .legLength(this.legLength)
                 .bloodType(this.bloodType)
                 .registrationNumber(this.registrationNumber)
-                .image(this.image)
+                .image(this.image == null || this.image.isEmpty() ? "/images/basephoto.png" : this.image)
                 .recentCheckupDate(this.recentCheckupDate)
                 .heartwormVaccinationDate(this.heartwormVaccinationDate)
                 .menstruationStartDate(this.menstruationStartDate)

@@ -6,3 +6,6 @@
 # Datasource local storage ignored files
 /dataSources/
 /dataSources.local.xml
+# 업로드된 파일 제외
+vojoge/uploads/
+
