@@ -23,8 +23,7 @@ public class DogDTO {
     private String bloodType;
     private String registrationNumber;
     private String image;
-
-    // ✅ 추가 필드
+    private boolean isNeutered;
     private LocalDate recentCheckupDate;
     private LocalDate heartwormVaccinationDate;
     private LocalDate menstruationStartDate;
@@ -35,7 +34,7 @@ public class DogDTO {
     public DogDTO(Long id, String name, int age, double weight, String gender, String puppySpecies,
                   double height, double legLength, String bloodType, String registrationNumber, String image,
                   LocalDate recentCheckupDate, LocalDate heartwormVaccinationDate,
-                  LocalDate menstruationStartDate, Integer menstruationDuration, Integer menstruationCycle) {
+                  LocalDate menstruationStartDate, Integer menstruationDuration, Integer menstruationCycle, boolean isNeutered) {
         this.id = id;
         this.name = name;
         this.age = age;
@@ -52,6 +51,7 @@ public class DogDTO {
         this.menstruationStartDate = menstruationStartDate;
         this.menstruationDuration = menstruationDuration;
         this.menstruationCycle = menstruationCycle;
+        this.isNeutered = isNeutered;
     }
 
     public Dog toEntity(User user) {
@@ -72,6 +72,7 @@ public class DogDTO {
                 .menstruationStartDate(this.menstruationStartDate)
                 .menstruationDuration(this.menstruationDuration)
                 .menstruationCycle(this.menstruationCycle)
+                .isNeutered(this.isNeutered)
                 .build();
     }
 
@@ -93,10 +94,10 @@ public class DogDTO {
                 .menstruationStartDate(dog.getMenstruationStartDate())
                 .menstruationDuration(dog.getMenstruationDuration())
                 .menstruationCycle(dog.getMenstruationCycle())
+                .isNeutered(dog.isNeutered())
                 .build();
     }
 
-    // ✅ 엔티티 업데이트 메서드 추가
     public void updateEntity(Dog dog) {
         if (Objects.nonNull(this.name)) dog.setName(this.name);
         if (this.age > 0) dog.setAge(this.age);
@@ -113,5 +114,6 @@ public class DogDTO {
         if (Objects.nonNull(this.menstruationStartDate)) dog.setMenstruationStartDate(this.menstruationStartDate);
         if (Objects.nonNull(this.menstruationDuration)) dog.setMenstruationDuration(this.menstruationDuration);
         if (Objects.nonNull(this.menstruationCycle)) dog.setMenstruationCycle(this.menstruationCycle);
+        if (this.isNeutered != dog.isNeutered()) dog.setNeutered(this.isNeutered);
     }
 }

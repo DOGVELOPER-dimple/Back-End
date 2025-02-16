@@ -2,10 +2,15 @@ package dogveloper.vojoge.social.controller;
 
 import dogveloper.vojoge.jwt.JwtStorageService;
 import dogveloper.vojoge.jwt.JwtTokenProvider;
+import dogveloper.vojoge.social.dto.ApiResponseDto;
+import dogveloper.vojoge.social.dto.KakaoLoginRequest;
+import dogveloper.vojoge.social.dto.UserInfoResponse;
 import dogveloper.vojoge.social.user.Provider;
 import dogveloper.vojoge.social.user.User;
 import dogveloper.vojoge.social.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -28,43 +33,41 @@ public class AuthController {
 
     @SneakyThrows
     @GetMapping("/login/google")
-    @Operation(summary = "구글 로그인 //준상")
+    @Operation(summary = "구글 로그인 리다이렉트", description = "구글 OAuth 로그인 페이지로 이동합니다.")
     public void googleLoginRedirect(HttpServletResponse response) {
         response.sendRedirect("https://vojoge.site/oauth2/authorization/google");
     }
 
-    /*
-    @SneakyThrows
-    @GetMapping("/login/kakao")
-    @Operation(summary = "카카오 웹 로그인 (기존 방식) //준상")
-    public void kakaoLoginRedirect(HttpServletResponse response) {
-        response.sendRedirect("https://vojoge.site/oauth2/authorization/kakao");
-    }
-    */
-
     @PostMapping("/login/kakao")
-    @Operation(summary = "카카오 앱 로그인 //준상")
-    public ResponseEntity<Map<String, Object>> kakaoLogin(@RequestBody Map<String, String> body) {
-        String kakaoAccessToken = body.get("token");
-        if (kakaoAccessToken == null) {
+    @Operation(summary = "카카오 앱 로그인", description = "카카오 Access Token을 이용해 로그인합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "로그인 성공"),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+            @ApiResponse(responseCode = "401", description = "인증 실패"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<Map<String, Object>> kakaoLogin(@RequestBody KakaoLoginRequest request) {
+        String kakaoAccessToken = request.getToken();
+
+        if (kakaoAccessToken == null || kakaoAccessToken.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("message", "토큰이 없습니다."));
         }
 
         try {
-            // ✅ 카카오 API 호출하여 사용자 정보 가져오기
+            // 카카오 API 호출하여 사용자 정보 가져오기
             HttpHeaders headers = new HttpHeaders();
             headers.set("Authorization", "Bearer " + kakaoAccessToken);
             headers.set("Content-Type", "application/x-www-form-urlencoded");
 
-            HttpEntity<Void> request = new HttpEntity<>(headers);
+            HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
             ResponseEntity<Map> response = restTemplate.exchange(
                     "https://kapi.kakao.com/v2/user/me",
                     HttpMethod.GET,
-                    request,
+                    requestEntity,
                     Map.class
             );
 
-            if (response.getStatusCode() == HttpStatus.FOUND) { // 302 응답 방지
+            if (response.getStatusCode() == HttpStatus.FOUND) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("message", "카카오 로그인 인증 실패 (302 리다이렉트)"));
             }
@@ -83,16 +86,15 @@ public class AuthController {
             String nickname = (String) ((Map<String, Object>) kakaoAccount.get("profile")).get("nickname");
             String profileImage = (String) ((Map<String, Object>) kakaoAccount.get("profile")).get("profile_image_url");
 
-            // ✅ 사용자 정보 저장 또는 로그인 처리
             User user = userService.findByEmail(email);
             if (user == null) {
-                System.out.println("✅ 신규 사용자 발견! 저장 시도: " + email);
+                System.out.println("신규 사용자 발견! 저장 시도: " + email);
 
-                String kakaoId = String.valueOf(responseBody.get("id")); // ✅ 카카오 사용자 ID 가져오기
-                String sub = "kakao_" + kakaoId; // ✅ sub 필드 값 설정
+                String kakaoId = String.valueOf(responseBody.get("id"));
+                String sub = "kakao_" + kakaoId;
 
                 user = User.builder()
-                        .sub(sub) // ✅ sub 값 추가
+                        .sub(sub)
                         .email(email)
                         .name(nickname)
                         .provider(Provider.KAKAO)
@@ -101,8 +103,7 @@ public class AuthController {
                 userService.saveUser(user);
             }
 
-
-            // ✅ JWT 발급
+            // JWT 발급
             String jwtToken = jwtTokenProvider.createToken(email);
 
             return ResponseEntity.ok(Map.of(
@@ -117,45 +118,40 @@ public class AuthController {
                     .body(Map.of("message", "서버 오류", "error", e.getMessage()));
         }
     }
+
+
+    @GetMapping("/userinfo")
+    @Operation(summary = "사용자 정보 조회", description = "로그인된 사용자의 정보를 조회합니다.", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<UserInfoResponse> getUserInfo() {
+        User user = userService.getAuthenticatedUser();
+        UserInfoResponse response = new UserInfoResponse(
+                user.getEmail(),
+                user.getName(),
+                user.getImage(),
+                user.getProvider().name()
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/logout")
-    @Operation(summary = "로그아웃 처리 //준상", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<Map<String, String>> logout() {
+    @Operation(summary = "로그아웃", description = "현재 로그인된 사용자의 JWT 토큰을 만료시킵니다.", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<ApiResponseDto> logout() {
         User user = userService.getAuthenticatedUser();
         String token = jwtStorageService.getEmailByToken(user.getEmail());
         boolean isDeleted = jwtStorageService.deleteToken(token);
         String message = isDeleted ? "Redis에서 토큰 삭제 완료" : "Redis에서 토큰 삭제 실패";
 
-        return ResponseEntity.ok(Map.of("message", "로그아웃 완료!", "status", message));
-    }
-
-    @GetMapping("/userinfo")
-    @Operation(summary = "사용자 정보 조회 //준상", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<Map<String, String>> getUserInfo() {
-        User user = userService.getAuthenticatedUser();
-
-        Map<String, String> userInfo = Map.of(
-                "email", user.getEmail(),
-                "name", user.getName(),
-                "profileImage", user.getImage(),
-                "provider", user.getProvider().name()
-        );
-
-        return ResponseEntity.ok(userInfo);
-    }
-
-    @GetMapping("/success")
-    @Operation(summary = "json응답으로 토큰 //준상", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<Map<String, String>> authSuccess(@RequestParam String token) {
-        return ResponseEntity.ok(Map.of("message", "로그인 성공", "token", token));
+        return ResponseEntity.ok(new ApiResponseDto("로그아웃 완료!", message));
     }
 
     @DeleteMapping("/withdraw")
-    @Operation(summary = "회원 탈퇴 //준상", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<Map<String, String>> withdrawUser(){
+    @Operation(summary = "회원 탈퇴", description = "사용자의 계정을 삭제합니다.", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<ApiResponseDto> withdrawUser() {
         User user = userService.getAuthenticatedUser();
         userService.deleteUser(user);
         jwtStorageService.deleteToken(jwtStorageService.getEmailByToken(user.getEmail()));
 
-        return ResponseEntity.ok(Map.of("message","회원 탈퇴 완료!"));
+        return ResponseEntity.ok(new ApiResponseDto("회원 탈퇴 완료!", null));
     }
 }
