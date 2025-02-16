@@ -24,7 +24,6 @@ public class DogService {
     private final UserService userService;
 
     private static final String IMAGE_UPLOAD_DIR = "dogveloper/vojoge/uploads/";
-
     private static final String DEFAULT_PROFILE_IMAGE =  "/images/basephoto.png";
 
     @Transactional
