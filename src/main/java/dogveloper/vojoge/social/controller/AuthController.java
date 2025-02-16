@@ -154,4 +154,12 @@ public class AuthController {
 
         return ResponseEntity.ok(new ApiResponseDto("회원 탈퇴 완료!", null));
     }
+
+    @PostMapping("/notification-settings")
+    @Operation(summary = "사용자의 알림 설정 변경", description = "사용자의 알림 허용 여부를 업데이트합니다.", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<ApiResponseDto> updateNotificationPreference(@RequestParam boolean allowNotifications) {
+        User user = userService.getAuthenticatedUser();
+        userService.updateNotificationPreference(user.getId(), allowNotifications);
+        return ResponseEntity.ok(new ApiResponseDto("알림 설정이 변경되었습니다.", null));
+    }
 }
