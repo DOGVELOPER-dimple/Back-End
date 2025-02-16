@@ -13,6 +13,7 @@ import java.util.Objects;
 public class DogDTO {
     @Schema(hidden = true)
     private Long id;
+
     private String name;
     private int age;
     private double weight;
