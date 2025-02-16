@@ -2,13 +2,13 @@ package dogveloper.vojoge.social.controller;
 
 import dogveloper.vojoge.jwt.JwtStorageService;
 import dogveloper.vojoge.jwt.JwtTokenProvider;
-import dogveloper.vojoge.social.dto.ApiResponseDto;
-import dogveloper.vojoge.social.dto.KakaoLoginRequest;
-import dogveloper.vojoge.social.dto.UserInfoResponse;
+import dogveloper.vojoge.social.dto.Userdto;
 import dogveloper.vojoge.social.user.Provider;
 import dogveloper.vojoge.social.user.User;
 import dogveloper.vojoge.social.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -40,23 +40,14 @@ public class AuthController {
 
     @PostMapping("/login/kakao")
     @Operation(summary = "카카오 앱 로그인", description = "카카오 Access Token을 이용해 로그인합니다.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "로그인 성공"),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청"),
-            @ApiResponse(responseCode = "401", description = "인증 실패"),
-            @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    public ResponseEntity<Map<String, Object>> kakaoLogin(@RequestBody KakaoLoginRequest request) {
-        String kakaoAccessToken = request.getToken();
-
-        if (kakaoAccessToken == null || kakaoAccessToken.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "토큰이 없습니다."));
+    public ResponseEntity<Userdto> kakaoLogin(@RequestParam String kakaoToken) {
+        if (kakaoToken == null || kakaoToken.isEmpty()) {
+            return ResponseEntity.badRequest().build();
         }
 
         try {
-            // 카카오 API 호출하여 사용자 정보 가져오기
             HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Bearer " + kakaoAccessToken);
+            headers.set("Authorization", "Bearer " + kakaoToken);
             headers.set("Content-Type", "application/x-www-form-urlencoded");
 
             HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
@@ -68,18 +59,17 @@ public class AuthController {
             );
 
             if (response.getStatusCode() == HttpStatus.FOUND) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("message", "카카오 로그인 인증 실패 (302 리다이렉트)"));
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
 
             Map<String, Object> responseBody = response.getBody();
             if (responseBody == null || !responseBody.containsKey("kakao_account")) {
-                return ResponseEntity.badRequest().body(Map.of("message", "카카오 사용자 정보 없음"));
+                return ResponseEntity.badRequest().build();
             }
 
             Map<String, Object> kakaoAccount = (Map<String, Object>) responseBody.get("kakao_account");
             if (!kakaoAccount.containsKey("email")) {
-                return ResponseEntity.badRequest().body(Map.of("message", "이메일 정보가 없습니다."));
+                return ResponseEntity.badRequest().build();
             }
 
             String email = (String) kakaoAccount.get("email");
@@ -88,78 +78,77 @@ public class AuthController {
 
             User user = userService.findByEmail(email);
             if (user == null) {
-                System.out.println("신규 사용자 발견! 저장 시도: " + email);
-
-                String kakaoId = String.valueOf(responseBody.get("id"));
-                String sub = "kakao_" + kakaoId;
-
                 user = User.builder()
-                        .sub(sub)
+                        .sub("kakao_" + responseBody.get("id"))
                         .email(email)
                         .name(nickname)
                         .provider(Provider.KAKAO)
                         .image(profileImage)
+                        .allowNotifications(true)
                         .build();
                 userService.saveUser(user);
             }
 
-            // JWT 발급
-            String jwtToken = jwtTokenProvider.createToken(email);
-
-            return ResponseEntity.ok(Map.of(
-                    "message", "로그인 성공",
-                    "token", jwtToken
-            ));
+            return ResponseEntity.ok(Userdto.fromEntity(user));
         } catch (HttpClientErrorException e) {
-            return ResponseEntity.status(e.getStatusCode())
-                    .body(Map.of("message", "카카오 로그인 API 호출 실패", "error", e.getResponseBodyAsString()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "서버 오류", "error", e.getMessage()));
+            return ResponseEntity.status(e.getStatusCode()).build();
         }
     }
 
-
     @GetMapping("/userinfo")
-    @Operation(summary = "사용자 정보 조회", description = "로그인된 사용자의 정보를 조회합니다.", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<UserInfoResponse> getUserInfo() {
+    @Operation(summary = "사용자 정보 조회", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<Userdto> getUserInfo() {
         User user = userService.getAuthenticatedUser();
-        UserInfoResponse response = new UserInfoResponse(
-                user.getEmail(),
-                user.getName(),
-                user.getImage(),
-                user.getProvider().name()
-        );
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(Userdto.fromEntity(user));
     }
 
     @PostMapping("/logout")
-    @Operation(summary = "로그아웃", description = "현재 로그인된 사용자의 JWT 토큰을 만료시킵니다.", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<ApiResponseDto> logout() {
+    @Operation(summary = "로그아웃", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "로그아웃 성공",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(example = "{ \"message\": \"로그아웃 완료\", \"detail\": \"Redis에서 토큰 삭제 완료\" }"))),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<Map<String, String>> logout() {
         User user = userService.getAuthenticatedUser();
         String token = jwtStorageService.getEmailByToken(user.getEmail());
         boolean isDeleted = jwtStorageService.deleteToken(token);
         String message = isDeleted ? "Redis에서 토큰 삭제 완료" : "Redis에서 토큰 삭제 실패";
 
-        return ResponseEntity.ok(new ApiResponseDto("로그아웃 완료!", message));
+        return ResponseEntity.ok(Map.of("message", "로그아웃 완료", "detail", message));
     }
 
     @DeleteMapping("/withdraw")
-    @Operation(summary = "회원 탈퇴", description = "사용자의 계정을 삭제합니다.", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<ApiResponseDto> withdrawUser() {
+    @Operation(summary = "회원 탈퇴", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "회원 탈퇴 성공",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(example = "{ \"message\": \"회원 탈퇴 완료\" }"))),
+    })
+    public ResponseEntity<Map<String, String>> withdrawUser() {
         User user = userService.getAuthenticatedUser();
         userService.deleteUser(user);
         jwtStorageService.deleteToken(jwtStorageService.getEmailByToken(user.getEmail()));
 
-        return ResponseEntity.ok(new ApiResponseDto("회원 탈퇴 완료!", null));
+        return ResponseEntity.ok(Map.of("message", "회원 탈퇴 완료"));
     }
 
     @PostMapping("/notification-settings")
-    @Operation(summary = "사용자의 알림 설정 변경", description = "사용자의 알림 허용 여부를 업데이트합니다.", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<ApiResponseDto> updateNotificationPreference(@RequestParam boolean allowNotifications) {
+    @Operation(summary = "사용자의 알림 설정 변경", description = "사용자의 알림 허용 여부를 업데이트합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "알림 설정 변경 성공",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(example = "{ \"message\": \"알림 설정 변경 성공\", \"detail\": \"사용자의 알림 허용 상태가 업데이트되었습니다.\" }")))
+    })
+    public ResponseEntity<Map<String, String>> updateNotificationSettings(@RequestParam boolean allowNotifications) {
         User user = userService.getAuthenticatedUser();
         userService.updateNotificationPreference(user.getId(), allowNotifications);
-        return ResponseEntity.ok(new ApiResponseDto("알림 설정이 변경되었습니다.", null));
+
+        return ResponseEntity.ok(Map.of(
+                "message", "알림 설정 변경 성공",
+                "detail", "사용자의 알림 허용 상태가 업데이트되었습니다."
+        ));
     }
 }

@@ -8,12 +8,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional
 public class UserService {
-
     private final UserRepository userRepository;
 
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
+
     public User getAuthenticatedUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -24,15 +24,19 @@ public class UserService {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("해당 이메일의 사용자를 찾을 수 없습니다: " + email));
     }
+
     public User findByEmail(String email) {
         return userRepository.findByEmail(email).orElse(null);
     }
+
     public void saveUser(User user) {
         userRepository.save(user);
     }
+
     public void deleteUser(User user) {
         userRepository.delete(user);
     }
+
     public void updateNotificationPreference(Long userId, boolean allowNotifications) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
