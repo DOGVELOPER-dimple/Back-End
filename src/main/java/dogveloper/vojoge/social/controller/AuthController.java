@@ -2,6 +2,7 @@ package dogveloper.vojoge.social.controller;
 
 import dogveloper.vojoge.jwt.JwtStorageService;
 import dogveloper.vojoge.jwt.JwtTokenProvider;
+import dogveloper.vojoge.social.dto.LoginResponseDto;
 import dogveloper.vojoge.social.dto.Userdto;
 import dogveloper.vojoge.social.user.Provider;
 import dogveloper.vojoge.social.user.User;
@@ -40,7 +41,7 @@ public class AuthController {
 
     @PostMapping("/login/kakao")
     @Operation(summary = "카카오 앱 로그인", description = "카카오 Access Token을 이용해 로그인합니다.")
-    public ResponseEntity<Userdto> kakaoLogin(@RequestParam String kakaoToken) {
+    public ResponseEntity<LoginResponseDto> kakaoLogin(@RequestParam String kakaoToken) {
         if (kakaoToken == null || kakaoToken.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
@@ -89,11 +90,16 @@ public class AuthController {
                 userService.saveUser(user);
             }
 
-            return ResponseEntity.ok(Userdto.fromEntity(user));
+            // WT 토큰 발급
+            String jwtToken = jwtTokenProvider.createToken(email);
+
+            // 응답 DTO 생성 후 반환
+            return ResponseEntity.ok(new LoginResponseDto(jwtToken, Userdto.fromEntity(user)));
         } catch (HttpClientErrorException e) {
             return ResponseEntity.status(e.getStatusCode()).build();
         }
     }
+
 
     @GetMapping("/userinfo")
     @Operation(summary = "사용자 정보 조회", security = @SecurityRequirement(name = "bearerAuth"))
@@ -136,7 +142,7 @@ public class AuthController {
     }
 
     @PostMapping("/notification-settings")
-    @Operation(summary = "사용자의 알림 설정 변경", description = "사용자의 알림 허용 여부를 업데이트합니다.")
+    @Operation(summary = "사용자의 알림 설정 변경", security = @SecurityRequirement(name = "bearerAuth"), description = "사용자의 알림 허용 여부를 업데이트합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "알림 설정 변경 성공",
                     content = @Content(mediaType = "application/json",
