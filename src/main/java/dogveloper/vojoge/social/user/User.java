@@ -28,4 +28,7 @@ public class User {
     private Provider provider;
 
     private String image;
+
+    @Column(nullable = false)
+    private boolean allowNotifications = true;
 }

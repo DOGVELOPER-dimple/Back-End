@@ -10,7 +10,9 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -64,5 +66,25 @@ public class DogController {
         User user = userService.getAuthenticatedUser();
         dogService.deleteDog(user, id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/upload")
+    @Operation(summary = "반려견 프로필 사진 업로드")
+    public ResponseEntity<String> uploadDogImage(@PathVariable Long id, @RequestParam("image") MultipartFile file) throws IOException {
+        String imageUrl = dogService.uploadDogImage(id, file);
+        return ResponseEntity.ok(imageUrl);
+    }
+    @PutMapping("/{id}/image")
+    @Operation(summary = "반려견 프로필 사진 변경")
+    public ResponseEntity<DogDTO> updateDogImage(@PathVariable Long id, @RequestBody DogDTO dogDTO) {
+        User user = userService.getAuthenticatedUser();
+        Dog updatedDog = dogService.updateDogImage(user, id, dogDTO.getImage());
+        return ResponseEntity.ok(DogDTO.fromEntity(updatedDog));
+    }
+    @DeleteMapping("/{id}/image")
+    @Operation(summary = "반려견 프로필 사진 삭제")
+    public ResponseEntity<String> deleteDogImage(@PathVariable Long id) {
+        dogService.deleteDogImage(id);
+        return ResponseEntity.ok("반려견 프로필 사진이 삭제되었습니다.");
     }
 }

@@ -8,6 +8,7 @@ import dogveloper.vojoge.social.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -34,16 +35,22 @@ public class NotificationController {
         return ResponseEntity.ok("Notification scheduled successfully");
     }
 
-    @Operation(summary = "실시간 알림 구독 //준상", description = "특정 반려견 ID로 실시간 알림을 구독합니다.", security = @SecurityRequirement(name = "bearer Auth"))
+    @Operation(summary = "실시간 알림 구독", description = "사용자가 알림을 허용한 경우에만 SSE 구독 가능")
     @GetMapping(value = "/subscribe/{dogId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter subscribe(@PathVariable Long dogId) {
+    public ResponseEntity<SseEmitter> subscribe(@PathVariable Long dogId) {
+        User user = userService.getAuthenticatedUser();
+
+        if (!user.isAllowNotifications()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); // 알림 허용 안 했으면 구독 X
+        }
+
         SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
         emitters.put(dogId, emitter);
 
         emitter.onCompletion(() -> emitters.remove(dogId));
         emitter.onTimeout(() -> emitters.remove(dogId));
 
-        return emitter;
+        return ResponseEntity.ok(emitter);
     }
 
     @Operation(summary = "구독자 알림 전송 //준상", description = "특정 반려견 ID의 구독자에게 알림을 전송합니다.", security = @SecurityRequirement(name = "bearer Auth"))

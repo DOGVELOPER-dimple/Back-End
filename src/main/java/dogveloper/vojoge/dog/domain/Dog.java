@@ -43,7 +43,7 @@ public class Dog {
     private String registrationNumber;
     private String image;
 
-    // ✅ 추가 필드 (nullable 명시적 설정)
+
     @Column(nullable = true)
     private LocalDate recentCheckupDate; // 최근 검진 일자
 
@@ -59,11 +59,14 @@ public class Dog {
     @Column(nullable = true)
     private Integer menstruationCycle; // 생리 주기
 
+    @Column(nullable = true)
+    private boolean isNeutered; // 중성화 여부
+
     @Builder
     public Dog(User user, String name, int age, double weight, String gender, String puppySpecies,
                double height, double legLength, String bloodType, String registrationNumber, String image,
                LocalDate recentCheckupDate, LocalDate heartwormVaccinationDate,
-               LocalDate menstruationStartDate, Integer menstruationDuration, Integer menstruationCycle) {
+               LocalDate menstruationStartDate, Integer menstruationDuration, Integer menstruationCycle, boolean isNeutered) {
         this.user = user;
         this.name = name;
         this.age = age;
@@ -80,5 +83,6 @@ public class Dog {
         this.menstruationStartDate = menstruationStartDate;
         this.menstruationDuration = menstruationDuration;
         this.menstruationCycle = menstruationCycle;
+        this.isNeutered = isNeutered();
     }
 }

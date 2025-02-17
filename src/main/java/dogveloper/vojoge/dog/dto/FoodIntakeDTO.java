@@ -1,6 +1,7 @@
 package dogveloper.vojoge.dog.dto;
 
 import dogveloper.vojoge.dog.domain.FoodIntake;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
 
@@ -8,7 +9,9 @@ import java.time.LocalDateTime;
 
 @Data
 public class FoodIntakeDTO {
+    @Schema(hidden = true)
     private Long id;
+
     private Double amount;
     private LocalDateTime intakeTime;
 
