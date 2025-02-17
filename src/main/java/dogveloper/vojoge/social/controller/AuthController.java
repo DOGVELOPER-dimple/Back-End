@@ -140,6 +140,11 @@ public class AuthController {
 
         return ResponseEntity.ok(Map.of("message", "회원 탈퇴 완료"));
     }
+    @GetMapping("/success")
+    @Operation(summary = "json응답으로 토큰 //준상", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<Map<String, String>> authSuccess(@RequestParam String token) {
+        return ResponseEntity.ok(Map.of("message", "로그인 성공", "token", token));
+    }
 
     @PostMapping("/notification-settings")
     @Operation(summary = "사용자의 알림 설정 변경", security = @SecurityRequirement(name = "bearerAuth"), description = "사용자의 알림 허용 여부를 업데이트합니다.")
