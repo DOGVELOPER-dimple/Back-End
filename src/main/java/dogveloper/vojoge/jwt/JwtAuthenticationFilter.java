@@ -20,10 +20,13 @@ import java.util.Collections;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final JwtStorageService jwtStorageService;
+
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
-    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider) {
+    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, JwtStorageService jwtStorageService) {
         this.jwtTokenProvider = jwtTokenProvider;
+        this.jwtStorageService = jwtStorageService;
     }
 
     @Override
@@ -39,6 +42,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String header = request.getHeader("Authorization");
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring(7);
+
+            // ✅ 블랙리스트 확인
+            if (jwtStorageService.isBlacklisted(token)) {
+                logger.warn("[JwtAuthenticationFilter] 블랙리스트에 등록된 토큰 감지 - 접근 거부");
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "블랙리스트 토큰");
+                return;
+            }
+
             if (jwtTokenProvider.validateToken(token)) {
                 String email = jwtTokenProvider.getEmailFromToken(token);
                 if (email != null) {
@@ -49,6 +60,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
+
 
     private boolean isSwaggerRequest(String path) {
         return path.startsWith("/swagger-ui") ||

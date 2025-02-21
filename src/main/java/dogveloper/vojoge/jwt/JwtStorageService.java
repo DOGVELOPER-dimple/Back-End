@@ -13,57 +13,53 @@ public class JwtStorageService {
 
     private static final Logger logger = LoggerFactory.getLogger(JwtStorageService.class);
     private final RedisTemplate<String, String> redisTemplate;
+    private final JwtTokenProvider jwtTokenProvider;
 
-    public JwtStorageService(@Qualifier("redisTemplate2") RedisTemplate<String, String> redisTemplate) {
+    public JwtStorageService(@Qualifier("redisTemplate2") RedisTemplate<String, String> redisTemplate, JwtTokenProvider jwtTokenProvider) {
         this.redisTemplate = redisTemplate;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
-    // 토큰 저장
-    public boolean saveToken(String token, String email, long validityInMilliseconds) {
+    public boolean saveRefreshToken(String email, String refreshToken, long validity) {
         try {
-            if (redisTemplate == null) {
-                throw new IllegalStateException("RedisTemplate is not initialized.");
-            }
-
-            redisTemplate.opsForValue().set(token, email, validityInMilliseconds, TimeUnit.MILLISECONDS);
-            redisTemplate.opsForValue().set(email, token, validityInMilliseconds, TimeUnit.MILLISECONDS);
-
-            if (redisTemplate.opsForValue().get(token) != null) {
-                return true;
-            } else {
-                logger.warn("[JwtStorageService] 토큰 저장 실패 - email: {}", email);
-                return false;
-            }
+            redisTemplate.opsForValue().set("refresh:" + email, refreshToken, validity, TimeUnit.MILLISECONDS);
+            return true;
         } catch (Exception e) {
-            logger.error("[JwtStorageService] Redis에 토큰 저장 중 오류 발생: {}", e.getMessage());
+            logger.error("[JwtStorageService] Refresh Token 저장 오류: {}", e.getMessage());
             return false;
         }
     }
 
-    // 토큰으로 이메일 조회
-    public String getEmailByToken(String token) {
+    public String getRefreshToken(String email) {
         try {
-            if (redisTemplate == null) {
-                throw new IllegalStateException("RedisTemplate is not initialized.");
-            }
-            return redisTemplate.opsForValue().get(token);
+            return redisTemplate.opsForValue().get("refresh:" + email);
         } catch (Exception e) {
-            logger.error("[JwtStorageService] Redis에서 이메일 조회 중 오류 발생: {}", e.getMessage());
+            logger.error("[JwtStorageService] Refresh Token 조회 오류: {}", e.getMessage());
             return null;
         }
     }
 
-    // 토큰 삭제
-    public boolean deleteToken(String token) {
+    public boolean deleteRefreshToken(String email) {
         try {
-            if (redisTemplate == null) {
-                throw new IllegalStateException("RedisTemplate is not initialized.");
-            }
-            redisTemplate.delete(token);
+            redisTemplate.delete("refresh:" + email);
             return true;
         } catch (Exception e) {
-            logger.error("[JwtStorageService] Redis에서 토큰 삭제 중 오류 발생: {}", e.getMessage());
+            logger.error("[JwtStorageService] Refresh Token 삭제 오류: {}", e.getMessage());
             return false;
         }
+    }
+    public boolean addToBlacklist(String token) {
+        try {
+            long expiration = jwtTokenProvider.getExpiration(token); // ✅ 이제 오류 없음
+            redisTemplate.opsForValue().set("blacklist:" + token, "invalid", expiration, TimeUnit.MILLISECONDS);
+            return true;
+        } catch (Exception e) {
+            logger.error("[JwtStorageService] Access Token 블랙리스트 추가 오류: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean isBlacklisted(String token) {
+        return redisTemplate.hasKey("blacklist:" + token);
     }
 }

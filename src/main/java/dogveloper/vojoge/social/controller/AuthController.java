@@ -4,7 +4,7 @@ import dogveloper.vojoge.jwt.JwtStorageService;
 import dogveloper.vojoge.jwt.JwtTokenProvider;
 import dogveloper.vojoge.social.dto.LoginResponseDto;
 import dogveloper.vojoge.social.dto.Userdto;
-import dogveloper.vojoge.social.user.Provider;
+import dogveloper.vojoge.social.service.KakaoAuthService;
 import dogveloper.vojoge.social.user.User;
 import dogveloper.vojoge.social.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,13 +13,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import org.springframework.http.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
 
@@ -30,8 +30,7 @@ public class AuthController {
     private final UserService userService;
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtStorageService jwtStorageService;
-    private final RestTemplate restTemplate;
-
+    private final KakaoAuthService kakaoAuthService;
     @SneakyThrows
     @GetMapping("/login/google")
     @Operation(summary = "구글 로그인 리다이렉트", description = "구글 OAuth 로그인 페이지로 이동합니다.")
@@ -42,62 +41,7 @@ public class AuthController {
     @PostMapping("/login/kakao")
     @Operation(summary = "카카오 앱 로그인", description = "카카오 Access Token을 이용해 로그인합니다.")
     public ResponseEntity<LoginResponseDto> kakaoLogin(@RequestParam String kakaoToken) {
-        if (kakaoToken == null || kakaoToken.isEmpty()) {
-            return ResponseEntity.badRequest().build();
-        }
-
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Bearer " + kakaoToken);
-            headers.set("Content-Type", "application/x-www-form-urlencoded");
-
-            HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
-            ResponseEntity<Map> response = restTemplate.exchange(
-                    "https://kapi.kakao.com/v2/user/me",
-                    HttpMethod.GET,
-                    requestEntity,
-                    Map.class
-            );
-
-            if (response.getStatusCode() == HttpStatus.FOUND) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-            }
-
-            Map<String, Object> responseBody = response.getBody();
-            if (responseBody == null || !responseBody.containsKey("kakao_account")) {
-                return ResponseEntity.badRequest().build();
-            }
-
-            Map<String, Object> kakaoAccount = (Map<String, Object>) responseBody.get("kakao_account");
-            if (!kakaoAccount.containsKey("email")) {
-                return ResponseEntity.badRequest().build();
-            }
-
-            String email = (String) kakaoAccount.get("email");
-            String nickname = (String) ((Map<String, Object>) kakaoAccount.get("profile")).get("nickname");
-            String profileImage = (String) ((Map<String, Object>) kakaoAccount.get("profile")).get("profile_image_url");
-
-            User user = userService.findByEmail(email);
-            if (user == null) {
-                user = User.builder()
-                        .sub("kakao_" + responseBody.get("id"))
-                        .email(email)
-                        .name(nickname)
-                        .provider(Provider.KAKAO)
-                        .image(profileImage)
-                        .allowNotifications(true)
-                        .build();
-                userService.saveUser(user);
-            }
-
-            // WT 토큰 발급
-            String jwtToken = jwtTokenProvider.createToken(email);
-
-            // 응답 DTO 생성 후 반환
-            return ResponseEntity.ok(new LoginResponseDto(jwtToken, Userdto.fromEntity(user)));
-        } catch (HttpClientErrorException e) {
-            return ResponseEntity.status(e.getStatusCode()).build();
-        }
+        return kakaoAuthService.kakaoLogin(kakaoToken);
     }
 
 
@@ -108,23 +52,72 @@ public class AuthController {
         return ResponseEntity.ok(Userdto.fromEntity(user));
     }
 
+    @PostMapping("/refresh")
+    @Operation(summary = "액세스 토큰 갱신", security = @SecurityRequirement(name = "bearerAuth"), description = "리프레시 토큰을 이용해 새로운 액세스 토큰을 발급합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "액세스 토큰 갱신 성공",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = LoginResponseDto.class))),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(example = "{ \"message\": \"리프레시 토큰이 필요합니다.\" }"))),
+            @ApiResponse(responseCode = "401", description = "유효하지 않은 리프레시 토큰",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(example = "{ \"message\": \"유효하지 않은 리프레시 토큰\" }"))),
+            @ApiResponse(responseCode = "401", description = "리프레시 토큰이 일치하지 않음",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(example = "{ \"message\": \"리프레시 토큰이 일치하지 않습니다.\" }")))
+    })
+    public ResponseEntity<LoginResponseDto> refreshAccessToken(@RequestParam String refreshToken) {
+        if (refreshToken == null || refreshToken.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+
+        String email = jwtTokenProvider.getEmailFromToken(refreshToken);
+        if (email == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        }
+
+        String storedRefreshToken = jwtStorageService.getRefreshToken(email);
+        if (!refreshToken.equals(storedRefreshToken)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        }
+
+        String newAccessToken = jwtTokenProvider.createToken(email);
+        String newRefreshToken = jwtTokenProvider.createRefreshToken(email);
+        User user = userService.findByEmail(email);
+
+        return ResponseEntity.ok(new LoginResponseDto(newAccessToken, newRefreshToken, Userdto.fromEntity(user)));
+    }
+
     @PostMapping("/logout")
     @Operation(summary = "로그아웃", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "로그아웃 성공",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(example = "{ \"message\": \"로그아웃 완료\", \"detail\": \"Redis에서 토큰 삭제 완료\" }"))),
+                            schema = @Schema(example = "{ \"message\": \"로그아웃 완료\", \"detail\": \"토큰 무효화 완료\" }"))),
             @ApiResponse(responseCode = "400", description = "잘못된 요청"),
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })
-    public ResponseEntity<Map<String, String>> logout() {
+    public ResponseEntity<Map<String, String>> logout(HttpServletRequest request) {
         User user = userService.getAuthenticatedUser();
-        String token = jwtStorageService.getEmailByToken(user.getEmail());
-        boolean isDeleted = jwtStorageService.deleteToken(token);
-        String message = isDeleted ? "Redis에서 토큰 삭제 완료" : "Redis에서 토큰 삭제 실패";
 
-        return ResponseEntity.ok(Map.of("message", "로그아웃 완료", "detail", message));
+        // ✅ Refresh Token 삭제
+        jwtStorageService.deleteRefreshToken(user.getEmail());
+
+        // ✅ Access Token 블랙리스트 추가 (무효화)
+        String token = request.getHeader("Authorization");
+        if (token != null && token.startsWith("Bearer ")) {
+            String accessToken = token.substring(7);
+            jwtStorageService.addToBlacklist(accessToken);
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "message", "로그아웃 완료",
+                "detail", "토큰 무효화 완료"
+        ));
     }
+
 
     @DeleteMapping("/withdraw")
     @Operation(summary = "회원 탈퇴", security = @SecurityRequirement(name = "bearerAuth"))
@@ -133,18 +126,47 @@ public class AuthController {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(example = "{ \"message\": \"회원 탈퇴 완료\" }"))),
     })
-    public ResponseEntity<Map<String, String>> withdrawUser() {
+    public ResponseEntity<Map<String, String>> withdrawUser(HttpServletRequest request) {
         User user = userService.getAuthenticatedUser();
+
+        // ✅ 사용자 삭제
         userService.deleteUser(user);
-        jwtStorageService.deleteToken(jwtStorageService.getEmailByToken(user.getEmail()));
+
+        // ✅ Refresh Token 삭제
+        jwtStorageService.deleteRefreshToken(user.getEmail());
+
+        // ✅ Access Token 블랙리스트 추가 (무효화)
+        String token = request.getHeader("Authorization");
+        if (token != null && token.startsWith("Bearer ")) {
+            String accessToken = token.substring(7);
+            jwtStorageService.addToBlacklist(accessToken);
+        }
 
         return ResponseEntity.ok(Map.of("message", "회원 탈퇴 완료"));
     }
+
     @GetMapping("/success")
-    @Operation(summary = "json응답으로 토큰 //준상", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<Map<String, String>> authSuccess(@RequestParam String token) {
-        return ResponseEntity.ok(Map.of("message", "로그인 성공", "token", token));
+    @Operation(summary = "로그인 성공 응답", description = "액세스 토큰과 리프레시 토큰을 반환합니다.",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "로그인 성공",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = LoginResponseDto.class))),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(example = "{ \"message\": \"잘못된 요청입니다.\" }")))
+    })
+    public ResponseEntity<LoginResponseDto> authSuccess(@RequestParam String token, @RequestParam String refreshToken) {
+        String email = jwtTokenProvider.getEmailFromToken(token);
+        if (email == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        }
+
+        User user = userService.findByEmail(email);
+        return ResponseEntity.ok(new LoginResponseDto(token, refreshToken, Userdto.fromEntity(user)));
     }
+
+
 
     @PostMapping("/notification-settings")
     @Operation(summary = "사용자의 알림 설정 변경", security = @SecurityRequirement(name = "bearerAuth"), description = "사용자의 알림 허용 여부를 업데이트합니다.")
