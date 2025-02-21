@@ -1,9 +1,9 @@
 package dogveloper.vojoge.jwt;
 
-import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
@@ -11,11 +11,11 @@ import java.util.Date;
 
 @Component
 public class JwtTokenProvider {
-    private final Key secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
-    private final Key refreshSecretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
-    private static final long ACCESS_TOKEN_VALIDITY = 3600000;  // 1시간
-    private static final long REFRESH_TOKEN_VALIDITY = 1209600000; // 2주
+    private static final Logger logger = LoggerFactory.getLogger(JwtTokenProvider.class);
+
+    private final Key secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    private static final long VALIDITY_IN_MILLISECONDS = 3600000;
 
     private final JwtStorageService jwtStorageService;
 
@@ -23,49 +23,55 @@ public class JwtTokenProvider {
         this.jwtStorageService = jwtStorageService;
     }
 
-    public String createAccessToken(String email) {
-        return generateToken(email, secretKey, ACCESS_TOKEN_VALIDITY);
-    }
-
-    public String createRefreshToken(String email) {
-        String refreshToken = generateToken(email, refreshSecretKey, REFRESH_TOKEN_VALIDITY);
-        jwtStorageService.saveToken(refreshToken, email, REFRESH_TOKEN_VALIDITY);
-        return refreshToken;
-    }
-
-    private String generateToken(String email, Key key, long validity) {
+    public String createToken(String email) {
+        Claims claims = Jwts.claims().setSubject(email);
         Date now = new Date();
-        Date expiry = new Date(now.getTime() + validity);
+        Date validity = new Date(now.getTime() + VALIDITY_IN_MILLISECONDS);
 
-        return Jwts.builder()
-                .setSubject(email)
-                .setIssuedAt(now)
-                .setExpiration(expiry)
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
+        try {
+            String token = Jwts.builder()
+                    .setClaims(claims)
+                    .setIssuedAt(now)
+                    .setExpiration(validity)
+                    .signWith(secretKey, SignatureAlgorithm.HS256)
+                    .compact();
+
+            boolean isSaved = jwtStorageService.saveToken(token, email, VALIDITY_IN_MILLISECONDS);
+            if (isSaved) {
+                logger.info("[JwtTokenProvider] 토큰이 Redis에 성공적으로 저장되었습니다.");
+            } else {
+                logger.warn("[JwtTokenProvider] 토큰이 Redis에 저장되지 않았습니다.");
+            }
+
+            logger.info("[JwtTokenProvider] 토큰 생성 완료: {}", token);
+            return token;
+        } catch (Exception e) {
+            logger.error("[JwtTokenProvider] 토큰 생성 중 오류 발생: {}", e.getMessage());
+            throw e;
+        }
     }
 
     public String getEmailFromToken(String token) {
-        return parseToken(token, secretKey);
-    }
-
-    public String getEmailFromRefreshToken(String token) {
-        return parseToken(token, refreshSecretKey);
-    }
-
-    private String parseToken(String token, Key key) {
-        return Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
-    }
-
-    public boolean validateToken(String token, boolean isRefreshToken) {
+        logger.info("[JwtTokenProvider] 토큰에서 이메일 추출 시작");
         try {
-            Key key = isRefreshToken ? refreshSecretKey : secretKey;
-            Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
+            String email = Jwts.parserBuilder()
+                    .setSigningKey(secretKey)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody()
+                    .getSubject();
+
+            logger.info("[JwtTokenProvider] 토큰에서 추출한 이메일: {}", email);
+            return email;
+        } catch (JwtException e) {
+            logger.error("[JwtTokenProvider] 토큰에서 이메일 추출 실패: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    public boolean validateToken(String token) {
+        try {
+            Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
             return false;
