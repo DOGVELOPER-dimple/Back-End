@@ -20,57 +20,48 @@ import java.util.Collections;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final JwtStorageService jwtStorageService;
+
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
-    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider) {
+    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, JwtStorageService jwtStorageService) {
         this.jwtTokenProvider = jwtTokenProvider;
+        this.jwtStorageService = jwtStorageService;
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws IOException, ServletException {
         String path = request.getRequestURI();
-        logger.info("[JwtAuthenticationFilter] 요청 URI: {}", path);
 
-        // Swagger 및 OpenAPI 관련 요청 제외
-        if (isSwaggerRequest(path)) {
-            logger.info("[JwtAuthenticationFilter] Swagger 요청은 필터를 통과합니다.");
+        if (isSwaggerRequest(path) || path.startsWith("/auth/login/")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 로그인 요청 제외
-        if (path.startsWith("/auth/login/")) {
-            logger.info("[JwtAuthenticationFilter] /auth/login/** 요청은 필터를 통과합니다.");
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        // Authorization 헤더 처리
         String header = request.getHeader("Authorization");
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring(7);
+
+            // ✅ 블랙리스트 확인
+            if (jwtStorageService.isBlacklisted(token)) {
+                logger.warn("[JwtAuthenticationFilter] 블랙리스트에 등록된 토큰 감지 - 접근 거부");
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "블랙리스트 토큰");
+                return;
+            }
+
             if (jwtTokenProvider.validateToken(token)) {
                 String email = jwtTokenProvider.getEmailFromToken(token);
                 if (email != null) {
                     setAuthentication(email, request);
-                    logger.info("[JwtAuthenticationFilter] JWT 인증 성공: {}", email);
-                } else {
-                    logger.warn("[JwtAuthenticationFilter] JWT 토큰에서 이메일 추출 실패");
                 }
-            } else {
-                logger.warn("[JwtAuthenticationFilter] JWT 토큰 유효하지 않음");
             }
-        } else {
-            logger.warn("[JwtAuthenticationFilter] Authorization 헤더 없음");
         }
 
         filterChain.doFilter(request, response);
     }
 
-    /**
-     * Swagger 및 OpenAPI 관련 요청인지 확인하는 메서드
-     */
+
     private boolean isSwaggerRequest(String path) {
         return path.startsWith("/swagger-ui") ||
                 path.startsWith("/v3/api-docs") ||
@@ -78,9 +69,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 path.startsWith("/webjars");
     }
 
-    /**
-     * SecurityContext에 인증 정보 설정
-     */
     private void setAuthentication(String email, HttpServletRequest request) {
         logger.info("[JwtAuthenticationFilter] SecurityContext에 인증 정보 설정 - 이메일: {}", email);
         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(

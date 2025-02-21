@@ -25,18 +25,18 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             throws IOException {
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
 
-
         String email = extractEmail(oAuth2User);
         if (email == null) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "이메일을 가져올 수 없습니다.");
             return;
         }
 
+        // ✅ Access Token & Refresh Token 생성
+        String accessToken = jwtTokenProvider.createToken(email);
+        String refreshToken = jwtTokenProvider.createRefreshToken(email);
 
-        String token = jwtTokenProvider.createToken(email);
-
-
-        String redirectUrl = "https://vojoge.site/auth/success?token=" + token;
+        // ✅ Access Token & Refresh Token을 함께 전달하도록 수정
+        String redirectUrl = String.format("https://vojoge.site/auth/success?token=%s&refreshToken=%s", accessToken, refreshToken);
         response.sendRedirect(redirectUrl);
     }
 
