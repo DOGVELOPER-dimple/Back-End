@@ -39,8 +39,8 @@ public class SecurityConfig {
                         "http://localhost:3000",
                         "http://localhost:8080",
                         "http://10.0.2.2:8080",
-                        "http://43.200.178.199:8080",
-                        "http://43.200.178.199",
+                        "http://3.34.179.184:8080",
+                        "http://3.34.179.184",
                         "https://vojoge.site"
                 ));
                 config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));

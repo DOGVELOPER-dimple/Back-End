@@ -36,14 +36,7 @@ public class JwtTokenProvider {
                     .signWith(secretKey, SignatureAlgorithm.HS256)
                     .compact();
 
-            boolean isSaved = jwtStorageService.saveToken(token, email, VALIDITY_IN_MILLISECONDS);
-            if (isSaved) {
-                logger.info("[JwtTokenProvider] 토큰이 Redis에 성공적으로 저장되었습니다.");
-            } else {
-                logger.warn("[JwtTokenProvider] 토큰이 Redis에 저장되지 않았습니다.");
-            }
-
-            logger.info("[JwtTokenProvider] 토큰 생성 완료: {}", token);
+            jwtStorageService.saveToken(token, email, VALIDITY_IN_MILLISECONDS);
             return token;
         } catch (Exception e) {
             logger.error("[JwtTokenProvider] 토큰 생성 중 오류 발생: {}", e.getMessage());
