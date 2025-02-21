@@ -4,7 +4,7 @@ import dogveloper.vojoge.jwt.JwtStorageService;
 import dogveloper.vojoge.jwt.JwtTokenProvider;
 import dogveloper.vojoge.social.dto.LoginResponseDto;
 import dogveloper.vojoge.social.dto.Userdto;
-import dogveloper.vojoge.social.user.Provider;
+import dogveloper.vojoge.social.service.KakaoAuthService;
 import dogveloper.vojoge.social.user.User;
 import dogveloper.vojoge.social.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,9 +16,9 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import org.springframework.http.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
@@ -31,6 +31,7 @@ public class AuthController {
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtStorageService jwtStorageService;
     private final RestTemplate restTemplate;
+    private final KakaoAuthService kakaoAuthService;
 
     @SneakyThrows
     @GetMapping("/login/google")
@@ -42,63 +43,10 @@ public class AuthController {
     @PostMapping("/login/kakao")
     @Operation(summary = "카카오 앱 로그인", description = "카카오 Access Token을 이용해 로그인합니다.")
     public ResponseEntity<LoginResponseDto> kakaoLogin(@RequestParam String kakaoToken) {
-        if (kakaoToken == null || kakaoToken.isEmpty()) {
-            return ResponseEntity.badRequest().build();
-        }
-
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Bearer " + kakaoToken);
-            headers.set("Content-Type", "application/x-www-form-urlencoded");
-
-            HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
-            ResponseEntity<Map> response = restTemplate.exchange(
-                    "https://kapi.kakao.com/v2/user/me",
-                    HttpMethod.GET,
-                    requestEntity,
-                    Map.class
-            );
-
-            if (response.getStatusCode() == HttpStatus.FOUND) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-            }
-
-            Map<String, Object> responseBody = response.getBody();
-            if (responseBody == null || !responseBody.containsKey("kakao_account")) {
-                return ResponseEntity.badRequest().build();
-            }
-
-            Map<String, Object> kakaoAccount = (Map<String, Object>) responseBody.get("kakao_account");
-            if (!kakaoAccount.containsKey("email")) {
-                return ResponseEntity.badRequest().build();
-            }
-
-            String email = (String) kakaoAccount.get("email");
-            String nickname = (String) ((Map<String, Object>) kakaoAccount.get("profile")).get("nickname");
-            String profileImage = (String) ((Map<String, Object>) kakaoAccount.get("profile")).get("profile_image_url");
-
-            User user = userService.findByEmail(email);
-            if (user == null) {
-                user = User.builder()
-                        .sub("kakao_" + responseBody.get("id"))
-                        .email(email)
-                        .name(nickname)
-                        .provider(Provider.KAKAO)
-                        .image(profileImage)
-                        .allowNotifications(true)
-                        .build();
-                userService.saveUser(user);
-            }
-
-            // WT 토큰 발급
-            String jwtToken = jwtTokenProvider.createToken(email);
-
-            // 응답 DTO 생성 후 반환
-            return ResponseEntity.ok(new LoginResponseDto(jwtToken, Userdto.fromEntity(user)));
-        } catch (HttpClientErrorException e) {
-            return ResponseEntity.status(e.getStatusCode()).build();
-        }
+        LoginResponseDto responseDto = kakaoAuthService.kakaoLogin(kakaoToken);
+        return ResponseEntity.ok(responseDto);
     }
+
 
 
     @GetMapping("/userinfo")
@@ -106,6 +54,18 @@ public class AuthController {
     public ResponseEntity<Userdto> getUserInfo() {
         User user = userService.getAuthenticatedUser();
         return ResponseEntity.ok(Userdto.fromEntity(user));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<Map<String, String>> refreshAccessToken(@RequestParam String refreshToken) {
+        if (!jwtTokenProvider.validateToken(refreshToken, true)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "유효하지 않은 리프레시 토큰"));
+        }
+
+        String email = jwtTokenProvider.getEmailFromRefreshToken(refreshToken);
+        String newAccessToken = jwtTokenProvider.createAccessToken(email);
+
+        return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
     }
 
     @PostMapping("/logout")
