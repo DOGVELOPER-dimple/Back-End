@@ -72,9 +72,22 @@ public class DogService {
     public String uploadDogImage(Long dogId, MultipartFile file) throws IOException {
         Dog dog = findById(dogId);
 
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("업로드할 파일이 없습니다.");
+        }
+        if (file.getSize() > 10 * 1024 * 1024) {
+            throw new IllegalArgumentException("파일 크기는 10MB를 초과할 수 없습니다.");
+        }
+
+        String originalFileName = file.getOriginalFilename();
+        if (originalFileName == null || !originalFileName.matches(".*\\.(jpg|jpeg|png|gif)$")) {
+            throw new IllegalArgumentException("허용된 이미지 형식은 jpg, jpeg, png, gif만 가능합니다.");
+        }
+
         Files.createDirectories(Paths.get(IMAGE_UPLOAD_DIR));
 
-        String fileName = "dog_" + dogId + ".png";
+        String fileExtension = originalFileName.substring(originalFileName.lastIndexOf("."));
+        String fileName = "dog_" + dogId + fileExtension;
         Path filePath = Paths.get(IMAGE_UPLOAD_DIR + fileName);
 
         file.transferTo(filePath.toFile());
@@ -85,17 +98,26 @@ public class DogService {
         return imageUrl;
     }
 
+
     @Transactional
-    public Dog updateDogImage(User user, Long id, String imageUrl) {
+    public Dog updateDogImage(User user, Long id, MultipartFile file) throws IOException {
         Dog existingDog = findById(id);
 
         if (!existingDog.getUser().getId().equals(user.getId())) {
-            throw new IllegalArgumentException("Unauthorized to update this dog");
+            throw new IllegalArgumentException("반려견 프로필 사진을 수정할 권한이 없습니다.");
         }
 
-        existingDog.setImage(imageUrl);
+        if (existingDog.getImage() != null && !existingDog.getImage().equals(DEFAULT_PROFILE_IMAGE)) {
+            Path filePath = Paths.get(IMAGE_UPLOAD_DIR + existingDog.getImage().replace("/uploads/", ""));
+            Files.deleteIfExists(filePath);
+        }
+
+        String newImageUrl = uploadDogImage(id, file);
+        existingDog.setImage(newImageUrl);
+
         return existingDog;
     }
+
 
     @Transactional
     public void deleteDogImage(Long dogId) {

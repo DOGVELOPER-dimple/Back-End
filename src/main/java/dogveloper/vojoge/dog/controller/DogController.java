@@ -70,15 +70,19 @@ public class DogController {
 
     @PostMapping("/{id}/upload")
     @Operation(summary = "반려견 프로필 사진 업로드")
-    public ResponseEntity<String> uploadDogImage(@PathVariable Long id, @RequestParam("image") MultipartFile file) throws IOException {
+    public ResponseEntity<String> uploadDogImage(
+            @PathVariable Long id,
+            @RequestParam("image") MultipartFile file) throws IOException {
         String imageUrl = dogService.uploadDogImage(id, file);
         return ResponseEntity.ok(imageUrl);
     }
     @PutMapping("/{id}/image")
     @Operation(summary = "반려견 프로필 사진 변경")
-    public ResponseEntity<DogDTO> updateDogImage(@PathVariable Long id, @RequestBody DogDTO dogDTO) {
+    public ResponseEntity<DogDTO> updateDogImage(
+            @PathVariable Long id,
+            @RequestParam("image") MultipartFile file) throws IOException {
         User user = userService.getAuthenticatedUser();
-        Dog updatedDog = dogService.updateDogImage(user, id, dogDTO.getImage());
+        Dog updatedDog = dogService.updateDogImage(user, id, file);
         return ResponseEntity.ok(DogDTO.fromEntity(updatedDog));
     }
     @DeleteMapping("/{id}/image")
