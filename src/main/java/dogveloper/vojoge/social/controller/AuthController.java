@@ -102,10 +102,8 @@ public class AuthController {
     public ResponseEntity<Map<String, String>> logout(HttpServletRequest request) {
         User user = userService.getAuthenticatedUser();
 
-        // ✅ Refresh Token 삭제
         jwtStorageService.deleteRefreshToken(user.getEmail());
 
-        // ✅ Access Token 블랙리스트 추가 (무효화)
         String token = request.getHeader("Authorization");
         if (token != null && token.startsWith("Bearer ")) {
             String accessToken = token.substring(7);
@@ -118,7 +116,6 @@ public class AuthController {
         ));
     }
 
-
     @DeleteMapping("/withdraw")
     @Operation(summary = "회원 탈퇴", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
@@ -129,13 +126,10 @@ public class AuthController {
     public ResponseEntity<Map<String, String>> withdrawUser(HttpServletRequest request) {
         User user = userService.getAuthenticatedUser();
 
-        // ✅ 사용자 삭제
         userService.deleteUser(user);
 
-        // ✅ Refresh Token 삭제
         jwtStorageService.deleteRefreshToken(user.getEmail());
 
-        // ✅ Access Token 블랙리스트 추가 (무효화)
         String token = request.getHeader("Authorization");
         if (token != null && token.startsWith("Bearer ")) {
             String accessToken = token.substring(7);
@@ -156,17 +150,16 @@ public class AuthController {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(example = "{ \"message\": \"잘못된 요청입니다.\" }")))
     })
-    public ResponseEntity<LoginResponseDto> authSuccess(@RequestParam String token, @RequestParam String refreshToken) {
+    public ResponseEntity<LoginResponseDto> authSuccess(@RequestParam String token) {
         String email = jwtTokenProvider.getEmailFromToken(token);
         if (email == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         }
 
         User user = userService.findByEmail(email);
+        String refreshToken = jwtTokenProvider.createRefreshToken(email);
         return ResponseEntity.ok(new LoginResponseDto(token, refreshToken, Userdto.fromEntity(user)));
     }
-
-
 
     @PostMapping("/notification-settings")
     @Operation(summary = "사용자의 알림 설정 변경", security = @SecurityRequirement(name = "bearerAuth"), description = "사용자의 알림 허용 여부를 업데이트합니다.")
